@@ -12,7 +12,7 @@ pub fn game_plugin(app: &mut App) {
 struct GameTimer(Timer);
 
 fn game_enter(mut commands: Commands) {
-    commands.spawn((Text::new("In game"), StateScoped(GameState::Game)));
+    commands.spawn((Text2d::new("In game"), StateScoped(GameState::Game)));
     commands.insert_resource(GameTimer(Timer::from_seconds(2.0, TimerMode::Once)));
 }
 

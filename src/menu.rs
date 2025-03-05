@@ -10,7 +10,7 @@ pub fn menu_plugin(app: &mut App) {
 struct MenuTimer(Timer);
 
 fn menu_enter(mut commands: Commands, _asset_server: Res<AssetServer>) {
-    commands.spawn((Text::new("Main menu"), StateScoped(GameState::Menu)));
+    commands.spawn((Text2d::new("Main menu"), StateScoped(GameState::Menu)));
     commands.insert_resource(MenuTimer(Timer::from_seconds(5.0, TimerMode::Once)));
 }
 
