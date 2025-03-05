@@ -11,8 +11,9 @@ enum GameState {
     #[default]
     Splash,
     Menu,
-    // Settings,
+    //Settings,
     Game,
+    //Pause
 }
 
 fn main() {
