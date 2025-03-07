@@ -3,7 +3,6 @@ use bevy::prelude::*;
 
 pub fn splash_plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::Splash), splash_enter)
-        // .add_systems(OnExit(GameState::Splash), splash_exit)
         .add_systems(Update, splash_update.run_if(in_state(GameState::Splash)));
 }
 
