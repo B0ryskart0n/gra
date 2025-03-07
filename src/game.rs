@@ -56,7 +56,7 @@ fn game_fixed_update(
 
     let dt = time_fixed.delta_secs();
     // TODO extract speed
-    transform.translation += Vec3::from((direction * 25.0, 0.0)) * dt;
+    transform.translation += Vec3::from((direction * 50.0, 0.0)) * dt;
 }
 
 fn game_update(
@@ -75,9 +75,6 @@ fn game_update(
     camera
         .translation
         .smooth_nudge(&direction, CAMERA_DECAY_RATE, time.delta_secs());
-
-    println!("Camera translation: {:?}", camera.translation);
-    println!("Soldier translation: {:?}", soldier.translation);
 
     if keyboard.pressed(KeyCode::Escape) {
         next_state.set(GameState::Menu);
