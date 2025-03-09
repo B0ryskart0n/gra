@@ -4,6 +4,7 @@ use std::f32::consts::FRAC_1_SQRT_2;
 /// Rate of exponential decay in the distance between camera and Soldier
 pub const CAMERA_DECAY_RATE: f32 = 3.0;
 
+// Maybe migrate all vectors to 3d, since they are translated regardless
 pub const DIRECTION_RIGHT: Vec2 = Vec2::X;
 pub const DIRECTION_UPRIGHT: Vec2 = Vec2 {
     x: FRAC_1_SQRT_2,
