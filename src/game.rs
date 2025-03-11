@@ -67,7 +67,8 @@ fn game_update(
     time: Res<Time>,
     keyboard: Res<ButtonInput<KeyCode>>,
     mut next_state: ResMut<NextState<GameState>>,
-    mut camera_query: Query<&mut Transform, (With<Camera2d>, Without<Player>)>,
+    mut camera_query: Query<&mut Transform, With<Camera2d>>,
+    // the Without<Camera2d> is required because both query Transform
     soldier_query: Query<&Transform, (With<Player>, Without<Camera2d>)>,
 ) {
     let mut camera = camera_query.single_mut();
