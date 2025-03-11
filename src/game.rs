@@ -17,6 +17,7 @@ fn game_enter(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut mate
     commands.spawn((
         Mesh2d(meshes.add(Rectangle::new(1000., 700.))),
         MeshMaterial2d(materials.add(ColorMaterial::from_color(GREY))),
+        StateScoped(GameState::Game),
     ));
     commands.spawn((
         Soldier,
