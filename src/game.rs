@@ -4,6 +4,8 @@ use bevy::color::palettes::css::{GREY, RED};
 use bevy::prelude::*;
 
 const PLAYER_SPEED: f32 = 100.0;
+/// Actually, rate of exponential decay in the distance between camera and it's goal
+const CAMERA_SPEED: f32 = 5.0;
 
 pub fn game_plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::Game), game_enter)
@@ -76,7 +78,7 @@ fn game_update(
 
     camera
         .translation
-        .smooth_nudge(&direction, CAMERA_DECAY_RATE, time.delta_secs());
+        .smooth_nudge(&direction, CAMERA_SPEED, time.delta_secs());
 
     if keyboard.pressed(KeyCode::Escape) {
         next_state.set(GameState::Menu);
