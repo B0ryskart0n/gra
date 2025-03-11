@@ -67,19 +67,39 @@ fn game_update(
     time: Res<Time>,
     keyboard: Res<ButtonInput<KeyCode>>,
     mut next_state: ResMut<NextState<GameState>>,
-    mut camera_query: Query<&mut Transform, With<Camera2d>>,
+    window_query: Query<&Window>,
+    // TODO something tells me that modifying Transform and reading GlobalTransform in the same schedule might be wrong
+    mut camera_query: Query<(&Camera, &mut Transform, &GlobalTransform), With<Camera2d>>,
     // the Without<Camera2d> is required because both query Transform
-    soldier_query: Query<&Transform, (With<Player>, Without<Camera2d>)>,
+    player_transform: Single<&Transform, (With<Player>, Without<Camera2d>)>,
 ) {
-    let mut camera = camera_query.single_mut();
-    let soldier = soldier_query.single();
+    let (camera, mut camera_transform, camera_global_transform) = camera_query.single_mut();
+    let window = window_query.single();
 
-    let Vec3 { x, y, .. } = soldier.translation;
-    let direction = Vec3::new(x, y, camera.translation.z);
+    // TODO
+    // The cursor cannot be moved at the same time as movement keys are pressed, which is weird.
+    // Also this seems a little skechy with calculating the vector from camera to cursor and then updating
+    // camera based on that because the cursor always moves with the camera.
+    let camera_goal = match window.cursor_position() {
+        // in case of no cursor on the screen just follow the player
+        None => player_transform.translation,
+        Some(viewport_position) => {
+            let cursor_world_position = Vec3::from((
+                camera
+                    .viewport_to_world_2d(camera_global_transform, viewport_position)
+                    .unwrap(),
+                0.0,
+            ));
+            // calculate vector from camera to cursor and add that to player
+            let direction = cursor_world_position - camera_global_transform.translation();
+            player_transform.translation + direction.clamp_length_max(PLAYER_SPEED)
+        }
+    }
+    .with_z(camera_global_transform.translation().z);
 
-    camera
+    camera_transform
         .translation
-        .smooth_nudge(&direction, CAMERA_SPEED, time.delta_secs());
+        .smooth_nudge(&camera_goal, CAMERA_SPEED, time.delta_secs());
 
     if keyboard.pressed(KeyCode::Escape) {
         next_state.set(GameState::Menu);
