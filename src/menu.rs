@@ -7,9 +7,6 @@ pub fn menu_plugin(app: &mut App) {
         .add_systems(Update, menu_update.run_if(in_state(GameState::Menu)));
 }
 
-#[derive(Resource, Deref, DerefMut)]
-struct MenuTimer(Timer);
-
 fn menu_enter(
     mut commands: Commands,
     _asset_server: Res<AssetServer>,
@@ -17,12 +14,15 @@ fn menu_enter(
 ) {
     let mut camera = camera_query.single_mut();
     camera.translation = ZERO3;
-    commands.spawn((Text2d::new("Main menu"), StateScoped(GameState::Menu)));
-    commands.insert_resource(MenuTimer(Timer::from_seconds(5.0, TimerMode::Once)));
+
+    commands.spawn((
+        Text2d::new("Main menu, press <Enter> to Game"),
+        StateScoped(GameState::Menu),
+    ));
 }
 
-fn menu_update(time: Res<Time>, mut next_state: ResMut<NextState<GameState>>, mut timer: ResMut<MenuTimer>) {
-    if timer.tick(time.delta()).finished() {
+fn menu_update(keyboard: Res<ButtonInput<KeyCode>>, mut next_state: ResMut<NextState<GameState>>) {
+    if keyboard.pressed(KeyCode::Enter) {
         next_state.set(GameState::Game);
     }
 }
