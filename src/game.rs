@@ -17,6 +17,11 @@ pub fn game_plugin(app: &mut App) {
 #[derive(Component)]
 struct Player;
 
+/// Represents the internal, underlying translation (position) used in the game logic,
+/// not on the UI level where `Transform` should be used.
+#[derive(Component, Deref, DerefMut)]
+struct InternalTranslation(Vec3);
+
 fn game_enter(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>) {
     commands.spawn((
         Mesh2d(meshes.add(Rectangle::new(1000., 700.))),
@@ -27,6 +32,7 @@ fn game_enter(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut mate
         Player,
         Mesh2d(meshes.add(Circle::new(25.))),
         MeshMaterial2d(materials.add(ColorMaterial::from_color(RED))),
+        // InternalTranslation(Vec3::new(0.0, 0.0, 1.0)),
         Transform::from_xyz(0., 0., 1.),
         StateScoped(GameState::Game),
     ));
