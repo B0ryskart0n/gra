@@ -8,7 +8,7 @@ const PLAYER_SPEED: f32 = 100.0;
 const CAMERA_SPEED: f32 = 5.0;
 
 pub fn game_plugin(app: &mut App) {
-    app.add_systems(OnEnter(GameState::Game), game_enter)
+    app.add_systems(OnEnter(GameState::Game), enter_game)
         .add_systems(FixedUpdate, player_physics.run_if(in_state(GameState::Game)))
         .add_systems(Update, handle_player_input.run_if(in_state(GameState::Game)))
         .add_systems(Update, player_update.run_if(in_state(GameState::Game)))
@@ -30,8 +30,7 @@ struct InternalTranslation(Vec3);
 #[derive(Component)]
 struct PlayerInput(Vec3);
 
-// TODO Rename to enter_game
-fn game_enter(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>) {
+fn enter_game(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>) {
     commands.spawn((
         Mesh2d(meshes.add(Rectangle::new(1280., 720.))),
         MeshMaterial2d(materials.add(ColorMaterial::from_color(GREY))),
