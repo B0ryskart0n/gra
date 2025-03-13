@@ -1,3 +1,4 @@
+use super::CursorPosition;
 use super::GameState;
 use super::utils::*;
 use bevy::color::palettes::css::{GREY, RED};
@@ -11,8 +12,8 @@ pub fn game_plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::Game), enter_game)
         .add_systems(FixedUpdate, player_physics.run_if(in_state(GameState::Game)))
         .add_systems(Update, handle_player_input.run_if(in_state(GameState::Game)))
-        .add_systems(Update, player_update.run_if(in_state(GameState::Game)))
-        .add_systems(Update, game_update.run_if(in_state(GameState::Game)))
+        .add_systems(Update, update_player.run_if(in_state(GameState::Game)))
+        .add_systems(Update, update_camera.run_if(in_state(GameState::Game)))
         .add_systems(Update, exit_game_check.run_if(in_state(GameState::Game)));
 }
 
@@ -82,38 +83,28 @@ fn player_physics(
     input.0 = Vec3::ZERO;
 }
 
-fn player_update(mut query: Query<(&mut Transform, &InternalTranslation), With<Player>>) {
+fn update_player(mut query: Query<(&mut Transform, &InternalTranslation), With<Player>>) {
     let (mut transform, position) = query.single_mut();
     transform.translation = position.0;
 }
 
-fn game_update(
+fn update_camera(
     time: Res<Time>,
-    window_query: Query<&Window>,
-    // TODO something tells me that modifying Transform and reading GlobalTransform in the same schedule might be wrong
-    mut camera_query: Query<(&Camera, &mut Transform, &GlobalTransform), With<Camera2d>>,
+    cursor_position: Res<CursorPosition>,
+    mut camera_query: Query<(&mut Transform, &GlobalTransform), With<Camera2d>>,
     // the Without<Camera2d> is required because both query Transform
     player_transform: Single<&Transform, (With<Player>, Without<Camera2d>)>,
 ) {
-    let (camera, mut camera_transform, camera_global_transform) = camera_query.single_mut();
-    let window = window_query.single();
+    let (mut camera_transform, camera_global_transform) = camera_query.single_mut();
 
     // TODO
     // The cursor cannot be moved at the same time as movement keys are pressed, which is weird.
-    // Also this seems a little skechy with calculating the vector from camera to cursor and then updating
-    // camera based on that because the cursor always moves with the camera.
-    let camera_goal = match window.cursor_position() {
+    let camera_goal = match cursor_position.0 {
         // in case of no cursor on the screen just follow the player
         None => player_transform.translation,
-        Some(viewport_position) => {
-            let cursor_world_position = Vec3::from((
-                camera
-                    .viewport_to_world_2d(camera_global_transform, viewport_position)
-                    .unwrap(),
-                0.0,
-            ));
+        Some(cursor_position) => {
             // calculate vector from camera to cursor and add that to player
-            let direction = cursor_world_position - camera_global_transform.translation();
+            let direction = cursor_position.extend(0.0) - camera_global_transform.translation();
             player_transform.translation + direction.clamp_length_max(PLAYER_SPEED)
         }
     }
