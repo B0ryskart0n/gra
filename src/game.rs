@@ -14,8 +14,14 @@ pub fn game_plugin(app: &mut App) {
         .add_systems(Update, handle_player_input.run_if(in_state(GameState::Game)))
         .add_systems(Update, update_player.run_if(in_state(GameState::Game)))
         .add_systems(Update, update_camera.run_if(in_state(GameState::Game)))
-        .add_systems(Update, exit_game_check.run_if(in_state(GameState::Game)));
+        .add_systems(Update, exit_game_check.run_if(in_state(GameState::Game)))
+        .add_systems(OnExit(GameState::Game), exit_game);
 }
+
+/// Accumulates the input on `Update` schedule, is cleared and taken into account in `player_physics`,
+/// which runs on `FixedUpdate` schedule.
+#[derive(Resource)]
+struct PlayerInput(Vec3);
 
 #[derive(Component)]
 struct Player;
@@ -25,13 +31,8 @@ struct Player;
 #[derive(Component, Deref, DerefMut)]
 struct InternalTranslation(Vec3);
 
-// TODO Could this be a `Resource`?
-/// Accumulates the input on `Update` schedule, is cleared and taken into account in `player_physics`,
-/// which runs on `FixedUpdate` schedule.
-#[derive(Component)]
-struct PlayerInput(Vec3);
-
 fn enter_game(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>) {
+    commands.insert_resource(PlayerInput(Vec3::ZERO));
     commands.spawn((
         Mesh2d(meshes.add(Rectangle::new(1280., 720.))),
         MeshMaterial2d(materials.add(ColorMaterial::from_color(GREY))),
@@ -39,7 +40,6 @@ fn enter_game(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut mate
     ));
     commands.spawn((
         Player,
-        PlayerInput(Vec3::ZERO),
         Mesh2d(meshes.add(Circle::new(25.))),
         MeshMaterial2d(materials.add(ColorMaterial::from_color(RED))),
         InternalTranslation(Vec3::new(0.0, 0.0, 1.0)),
@@ -47,10 +47,11 @@ fn enter_game(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut mate
         StateScoped(GameState::Game),
     ));
 }
+fn exit_game(mut commands: Commands) {
+    commands.remove_resource::<PlayerInput>();
+}
 
-fn handle_player_input(keyboard: Res<ButtonInput<KeyCode>>, mut query: Query<&mut PlayerInput>) {
-    let mut player_input = query.single_mut();
-
+fn handle_player_input(keyboard: Res<ButtonInput<KeyCode>>, mut player_input: ResMut<PlayerInput>) {
     let left = keyboard.pressed(KeyCode::KeyA);
     let right = keyboard.pressed(KeyCode::KeyD);
     let down = keyboard.pressed(KeyCode::KeyS);
@@ -76,11 +77,12 @@ fn handle_player_input(keyboard: Res<ButtonInput<KeyCode>>, mut query: Query<&mu
 
 fn player_physics(
     time_fixed: Res<Time<Fixed>>,
-    mut query: Query<(&mut InternalTranslation, &mut PlayerInput), With<Player>>,
+    mut query: Query<&mut InternalTranslation, With<Player>>,
+    mut player_input: ResMut<PlayerInput>,
 ) {
-    let (mut position, mut input) = query.single_mut();
-    position.0 += input.0 * PLAYER_SPEED * time_fixed.delta_secs();
-    input.0 = Vec3::ZERO;
+    let mut position = query.single_mut();
+    position.0 += player_input.0 * PLAYER_SPEED * time_fixed.delta_secs();
+    player_input.0 = Vec3::ZERO;
 }
 
 fn update_player(mut query: Query<(&mut Transform, &InternalTranslation), With<Player>>) {
