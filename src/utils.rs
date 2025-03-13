@@ -1,8 +1,6 @@
 use bevy::prelude::*;
 use std::f32::consts::FRAC_1_SQRT_2;
 
-pub const ZERO3: Vec3 = Vec3 { x: 0.0, y: 0.0, z: 0.0 };
-
 pub const DIRECTION_RIGHT: Vec3 = Vec3::X;
 pub const DIRECTION_UPRIGHT: Vec3 = Vec3 {
     x: FRAC_1_SQRT_2,

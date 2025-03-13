@@ -9,9 +9,11 @@ const CAMERA_SPEED: f32 = 5.0;
 
 pub fn game_plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::Game), game_enter)
-        // TODO FixedUpdate is good for physics, but updating the Transform (visual component) should be done in Update
-        .add_systems(FixedUpdate, game_fixed_update.run_if(in_state(GameState::Game)))
-        .add_systems(Update, game_update.run_if(in_state(GameState::Game)));
+        .add_systems(FixedUpdate, player_physics.run_if(in_state(GameState::Game)))
+        .add_systems(Update, handle_player_input.run_if(in_state(GameState::Game)))
+        .add_systems(Update, player_update.run_if(in_state(GameState::Game)))
+        .add_systems(Update, game_update.run_if(in_state(GameState::Game)))
+        .add_systems(Update, exit_game_check.run_if(in_state(GameState::Game)));
 }
 
 #[derive(Component)]
@@ -22,28 +24,32 @@ struct Player;
 #[derive(Component, Deref, DerefMut)]
 struct InternalTranslation(Vec3);
 
+// TODO Could this be a `Resource`?
+/// Accumulates the input on `Update` schedule, is cleared and taken into account in `player_physics`,
+/// which runs on `FixedUpdate` schedule.
+#[derive(Component)]
+struct PlayerInput(Vec3);
+
+// TODO Rename to enter_game
 fn game_enter(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>) {
     commands.spawn((
-        Mesh2d(meshes.add(Rectangle::new(1000., 700.))),
+        Mesh2d(meshes.add(Rectangle::new(1280., 720.))),
         MeshMaterial2d(materials.add(ColorMaterial::from_color(GREY))),
         StateScoped(GameState::Game),
     ));
     commands.spawn((
         Player,
+        PlayerInput(Vec3::ZERO),
         Mesh2d(meshes.add(Circle::new(25.))),
         MeshMaterial2d(materials.add(ColorMaterial::from_color(RED))),
-        // InternalTranslation(Vec3::new(0.0, 0.0, 1.0)),
-        Transform::from_xyz(0., 0., 1.),
+        InternalTranslation(Vec3::new(0.0, 0.0, 1.0)),
+        Transform::default(),
         StateScoped(GameState::Game),
     ));
 }
 
-fn game_fixed_update(
-    time_fixed: Res<Time<Fixed>>,
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut player_query: Query<&mut Transform, With<Player>>,
-) {
-    let mut player = player_query.single_mut();
+fn handle_player_input(keyboard: Res<ButtonInput<KeyCode>>, mut query: Query<&mut PlayerInput>) {
+    let mut player_input = query.single_mut();
 
     let left = keyboard.pressed(KeyCode::KeyA);
     let right = keyboard.pressed(KeyCode::KeyD);
@@ -65,14 +71,25 @@ fn game_fixed_update(
         (false, true, true, false) => DIRECTION_DOWNRIGHT,
     };
 
-    let dt = time_fixed.delta_secs();
-    player.translation += direction * PLAYER_SPEED * dt;
+    player_input.0 += direction;
+}
+
+fn player_physics(
+    time_fixed: Res<Time<Fixed>>,
+    mut query: Query<(&mut InternalTranslation, &mut PlayerInput), With<Player>>,
+) {
+    let (mut position, mut input) = query.single_mut();
+    position.0 += input.0 * PLAYER_SPEED * time_fixed.delta_secs();
+    input.0 = Vec3::ZERO;
+}
+
+fn player_update(mut query: Query<(&mut Transform, &InternalTranslation), With<Player>>) {
+    let (mut transform, position) = query.single_mut();
+    transform.translation = position.0;
 }
 
 fn game_update(
     time: Res<Time>,
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut next_state: ResMut<NextState<GameState>>,
     window_query: Query<&Window>,
     // TODO something tells me that modifying Transform and reading GlobalTransform in the same schedule might be wrong
     mut camera_query: Query<(&Camera, &mut Transform, &GlobalTransform), With<Camera2d>>,
@@ -106,7 +123,9 @@ fn game_update(
     camera_transform
         .translation
         .smooth_nudge(&camera_goal, CAMERA_SPEED, time.delta_secs());
+}
 
+fn exit_game_check(keyboard: Res<ButtonInput<KeyCode>>, mut next_state: ResMut<NextState<GameState>>) {
     if keyboard.pressed(KeyCode::Escape) {
         next_state.set(GameState::Menu);
     }

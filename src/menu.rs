@@ -1,5 +1,4 @@
 use super::GameState;
-use super::utils::*;
 use bevy::prelude::*;
 
 pub fn menu_plugin(app: &mut App) {
@@ -13,7 +12,7 @@ fn menu_enter(
     mut camera_query: Query<&mut Transform, With<Camera2d>>,
 ) {
     let mut camera = camera_query.single_mut();
-    camera.translation = ZERO3;
+    camera.translation = Vec3::ZERO;
 
     commands.spawn((
         Text2d::new("Main menu, press <Enter> to Game"),
