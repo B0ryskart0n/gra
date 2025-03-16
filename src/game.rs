@@ -99,8 +99,6 @@ fn update_camera(
 ) {
     let (mut camera_transform, camera_global_transform) = camera_query.single_mut();
 
-    // TODO
-    // The cursor cannot be moved at the same time as movement keys are pressed, which is weird.
     let camera_goal = match cursor_position.0 {
         // in case of no cursor on the screen just follow the player
         None => player_transform.translation,
