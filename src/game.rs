@@ -4,9 +4,10 @@ use super::utils::*;
 use bevy::color::palettes::css::{BLUE, GREY, RED};
 use bevy::prelude::*;
 
-const PLAYER_SPEED: f32 = 200.0;
+const PLAYER_SPEED: f32 = 250.0;
 /// Actually, rate of exponential decay in the distance between camera and it's goal
 const CAMERA_SPEED: f32 = 5.0;
+const CURSOR_CAMERA_INFLUENCE: f32 = 0.4;
 
 pub fn game_plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::Game), enter_game)
@@ -157,7 +158,7 @@ fn update_camera(
         Some(cursor_position) => {
             // calculate vector from camera to cursor and add that to player
             let direction = cursor_position.extend(0.0) - camera_global_transform.translation();
-            player_transform.translation + direction.clamp_length_max(PLAYER_SPEED)
+            player_transform.translation + CURSOR_CAMERA_INFLUENCE * direction
         }
     }
     .with_z(camera_global_transform.translation().z);
