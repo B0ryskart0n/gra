@@ -8,6 +8,7 @@ use bevy::prelude::*;
 
 const PROJECTILE_SPEED: f32 = 1000.0;
 const PLAYER_SPEED: f32 = 250.0;
+const ATTACK_SPEED: f32 = 2.0;
 /// Actually, rate of exponential decay in the distance between camera and it's goal
 const CAMERA_SPEED: f32 = 6.0;
 const CURSOR_CAMERA_INFLUENCE: f32 = 0.4;
@@ -16,7 +17,7 @@ pub fn game_plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::Game), enter_game)
         .add_systems(Update, handle_player_input.run_if(in_state(GameState::Game)))
         .add_systems(Update, display.run_if(in_state(GameState::Game)))
-        .add_systems(Update, primary.run_if(in_state(GameState::Game)))
+        .add_systems(FixedUpdate, primary.run_if(in_state(GameState::Game)))
         .add_systems(Update, update_camera.run_if(in_state(GameState::Game)))
         .add_systems(Update, exit_game_check.run_if(in_state(GameState::Game)))
         .add_systems(
@@ -35,6 +36,9 @@ struct PlayerInput {
     dash: bool,
     primary: bool,
 }
+
+#[derive(Resource)]
+struct AttackTimer(Timer);
 
 #[derive(Component)]
 struct Projectile;
@@ -57,6 +61,7 @@ struct PlayerState {
 fn enter_game(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>) {
     commands.init_resource::<PlayerInput>();
     commands.insert_resource(DashTimer(Timer::from_seconds(0.5, TimerMode::Once)));
+    commands.insert_resource(AttackTimer(Timer::from_seconds(1.0 / ATTACK_SPEED, TimerMode::Once)));
 
     commands.spawn((
         Mesh2d(meshes.add(Rectangle::new(1280., 720.))),
@@ -152,16 +157,20 @@ fn physics(time_fixed: Res<Time<Fixed>>, mut query: Query<(&mut Position, &Veloc
 }
 
 fn primary(
+    time_fixed: Res<Time<Fixed>>,
     mut commands: Commands,
     query: Query<(&Position, &PlayerState), With<Player>>,
     cursor_position: Res<CursorPosition>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    mut attack_timer: ResMut<AttackTimer>,
 ) {
     let (position, player_state) = query.single();
 
+    attack_timer.0.tick(time_fixed.delta());
+
     // TODO Despawn bullets after some time
-    if player_state.primary {
+    if player_state.primary && attack_timer.0.finished() {
         commands.spawn((
             Projectile,
             Mesh2d(meshes.add(Circle::new(5.))),
@@ -176,6 +185,7 @@ fn primary(
             )),
             StateScoped(GameState::Game),
         ));
+        attack_timer.0.reset();
     }
 }
 
