@@ -6,6 +6,7 @@ use super::utils::*;
 use bevy::color::palettes::css::{BLUE, GREY, RED};
 use bevy::prelude::*;
 
+const PROJECTILE_SPEED: f32 = 1000.0;
 const PLAYER_SPEED: f32 = 250.0;
 /// Actually, rate of exponential decay in the distance between camera and it's goal
 const CAMERA_SPEED: f32 = 6.0;
@@ -167,8 +168,12 @@ fn primary(
             MeshMaterial2d(materials.add(ColorMaterial::from_color(BLUE))),
             Transform::from_translation(position.0),
             Position(position.0),
-            // TODO add handling when the cursor is not on the screen
-            Velocity(cursor_position.0.unwrap().extend(0.0) - position.0),
+            // TODO Is there a better way to get a vector of given length in the given direction
+            Velocity(Vec3::lerp(
+                Vec3::ZERO,
+                (cursor_position.0.unwrap_or(Vec2::X).extend(0.0) - position.0).normalize(),
+                PROJECTILE_SPEED,
+            )),
             StateScoped(GameState::Game),
         ));
     }
