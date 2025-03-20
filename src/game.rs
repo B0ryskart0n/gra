@@ -84,6 +84,9 @@ fn exit_game(mut commands: Commands) {
     commands.remove_resource::<PlayerInput>();
 }
 
+// TODO Think about handling a situation where one swift button press is registered and that input is overriden in
+// next schedule run (when the button is already released) and the physics did not run, because the two frames were too
+// close to each other. Then the swift input is discarded in the physics simulation.
 fn handle_player_input(
     mouse: Res<ButtonInput<MouseButton>>,
     keyboard: Res<ButtonInput<KeyCode>>,
