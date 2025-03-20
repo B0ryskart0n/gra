@@ -1,5 +1,3 @@
-// TODO Consider merging `Position` and `Tranfsorm`, since it may just not be worth it to run the physics separately
-
 use super::CursorPosition;
 use super::GameState;
 use super::utils::*;
@@ -15,21 +13,24 @@ const CURSOR_CAMERA_INFLUENCE: f32 = 0.4;
 
 pub fn game_plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::Game), enter_game)
-        .add_systems(Update, handle_player_input.run_if(in_state(GameState::Game)))
-        .add_systems(Update, display.run_if(in_state(GameState::Game)))
-        .add_systems(FixedUpdate, primary.run_if(in_state(GameState::Game)))
-        .add_systems(Update, update_camera.run_if(in_state(GameState::Game)))
-        .add_systems(Update, exit_game_check.run_if(in_state(GameState::Game)))
+        .add_systems(
+            RunFixedMainLoop,
+            handle_player_input
+                .run_if(in_state(GameState::Game))
+                .in_set(RunFixedMainLoopSystem::BeforeFixedMainLoop),
+        )
         .add_systems(
             FixedUpdate,
-            // important to keep the ordering so the movement is smooth
-            (player_state, physics).chain().run_if(in_state(GameState::Game)),
+            (primary, (player_state, physics).chain()).run_if(in_state(GameState::Game)),
+        )
+        .add_systems(
+            Update,
+            (display, update_camera, exit_game_check).run_if(in_state(GameState::Game)),
         )
         .add_systems(OnExit(GameState::Game), exit_game);
 }
 
-/// Accumulates the input on `Update` schedule, is cleared and taken into account in `player_physics`,
-/// which runs on `FixedUpdate` schedule.
+/// Accumulates the input on `Update` schedule, is cleared and taken into account in `FixedUpdate`.
 #[derive(Resource, Default)]
 struct PlayerInput {
     direction: Vec3,
@@ -93,7 +94,7 @@ fn handle_player_input(
     let down = keyboard.pressed(KeyCode::KeyS);
     let up = keyboard.pressed(KeyCode::KeyW);
 
-    let direction = match (left, right, down, up) {
+    player_input.direction = match (left, right, down, up) {
         (false, false, false, false)
         | (true, true, true, true)
         | (true, true, false, false)
@@ -107,17 +108,14 @@ fn handle_player_input(
         (false, false, true, false) | (true, true, true, false) => DIRECTION_DOWN,
         (false, true, true, false) => DIRECTION_DOWNRIGHT,
     };
-    player_input.direction += direction;
 
-    // TODO Investigate whether this causes problems if Update runs twice with no FixedUpdate
-    player_input.dash = keyboard.any_just_pressed(vec![KeyCode::ShiftLeft, KeyCode::Space]);
+    player_input.dash = keyboard.any_pressed(vec![KeyCode::ShiftLeft, KeyCode::Space]);
     player_input.primary = mouse.pressed(MouseButton::Left);
 }
 
 #[derive(Resource)]
 struct DashTimer(Timer);
 
-// TODO Split into three stages: input handling (UI) -> state (Fixed) -> physics (Fixed) -> UI
 fn player_state(
     time_fixed: Res<Time<Fixed>>,
     mut query: Query<(&mut PlayerState, &mut Velocity), With<Player>>,
@@ -185,6 +183,7 @@ fn primary(
             )),
             StateScoped(GameState::Game),
         ));
+
         attack_timer.0.reset();
     }
 }
@@ -209,6 +208,7 @@ fn display(
         .for_each(|(pos, mut transform)| transform.translation = pos.0);
 }
 
+// TODO Consider moving from `Update` to `BeforeFixedMainLoop`
 fn update_camera(
     time: Res<Time>,
     cursor_position: Res<CursorPosition>,
