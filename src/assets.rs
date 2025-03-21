@@ -1,4 +1,4 @@
-use bevy::color::palettes::css::{BLUE, GREEN, GREY, RED, WHITE};
+use bevy::color::palettes::css::{BLUE, GREEN, GREY, RED};
 use bevy::prelude::*;
 
 #[derive(Resource)]
