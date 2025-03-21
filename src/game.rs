@@ -214,7 +214,6 @@ fn display(
         .for_each(|(pos, mut transform)| transform.translation = pos.0);
 }
 
-// TODO Consider moving from `Update` to `BeforeFixedMainLoop`
 fn update_camera(
     time: Res<Time>,
     cursor_position: Res<CursorPosition>,
