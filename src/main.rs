@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-// mod assets;
+mod assets;
 mod game;
 mod menu;
 // mod settings;

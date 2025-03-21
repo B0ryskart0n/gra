@@ -1,7 +1,7 @@
 use super::CursorPosition;
 use super::GameState;
+use super::assets::*;
 use super::utils::*;
-use bevy::color::palettes::css::{BLUE, GREY, RED};
 use bevy::prelude::*;
 
 const PROJECTILE_SPEED: f32 = 1000.0;
@@ -12,7 +12,7 @@ const CAMERA_SPEED: f32 = 6.0;
 const CURSOR_CAMERA_INFLUENCE: f32 = 0.4;
 
 pub fn game_plugin(app: &mut App) {
-    app.add_systems(OnEnter(GameState::Game), enter_game)
+    app.add_systems(OnEnter(GameState::Game), (init_basic_colors, enter_game).chain())
         .add_systems(
             RunFixedMainLoop,
             handle_player_input
@@ -59,20 +59,24 @@ struct PlayerState {
     primary: bool,
 }
 
-fn enter_game(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>) {
+fn init_basic_colors(mut commands: Commands, materials: ResMut<Assets<ColorMaterial>>) {
+    commands.insert_resource(BasicColorHandles::init_simple_colors(materials));
+}
+
+fn enter_game(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, colors: Res<BasicColorHandles>) {
     commands.init_resource::<PlayerInput>();
     commands.insert_resource(DashTimer(Timer::from_seconds(0.5, TimerMode::Once)));
     commands.insert_resource(AttackTimer(Timer::from_seconds(1.0 / ATTACK_SPEED, TimerMode::Once)));
 
     commands.spawn((
         Mesh2d(meshes.add(Rectangle::new(1280., 720.))),
-        MeshMaterial2d(materials.add(ColorMaterial::from_color(GREY))),
+        MeshMaterial2d(colors.grey.clone()),
         StateScoped(GameState::Game),
     ));
     commands.spawn((
         Player,
         Mesh2d(meshes.add(Circle::new(25.))),
-        MeshMaterial2d(materials.add(ColorMaterial::from_color(RED))),
+        MeshMaterial2d(colors.red.clone()),
         PlayerState::default(),
         Position(Vec3::from((0.0, 0.0, 1.0))),
         Velocity(Vec3::ZERO),
@@ -163,7 +167,7 @@ fn primary(
     query: Query<(&Position, &PlayerState), With<Player>>,
     cursor_position: Res<CursorPosition>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    colors: Res<BasicColorHandles>,
     mut attack_timer: ResMut<AttackTimer>,
 ) {
     let (position, player_state) = query.single();
@@ -175,7 +179,7 @@ fn primary(
         commands.spawn((
             Projectile,
             Mesh2d(meshes.add(Circle::new(5.))),
-            MeshMaterial2d(materials.add(ColorMaterial::from_color(BLUE))),
+            MeshMaterial2d(colors.green.clone()),
             Transform::from_translation(position.0),
             Position(position.0),
             // TODO Is there a better way to get a vector of given length in the given direction
@@ -195,15 +199,14 @@ fn primary(
 fn display(
     mut player: Query<(&PlayerState, &mut MeshMaterial2d<ColorMaterial>), With<Player>>,
     mut query: Query<(&Position, &mut Transform)>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    colors: Res<BasicColorHandles>,
 ) {
     let (state, mut material) = player.single_mut();
 
-    // TODO Introduce reusing colors instead of adding new ones.
     if state.dashing {
-        material.0 = materials.add(ColorMaterial::from_color(BLUE));
+        material.0 = colors.blue.clone();
     } else {
-        material.0 = materials.add(ColorMaterial::from_color(RED));
+        material.0 = colors.red.clone();
     }
 
     query
