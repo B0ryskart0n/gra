@@ -18,5 +18,3 @@ impl BasicColorHandles {
         }
     }
 }
-
-// TODO init with basic color materials
