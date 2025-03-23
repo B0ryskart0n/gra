@@ -5,6 +5,7 @@ use super::utils::*;
 use bevy::prelude::*;
 
 const PROJECTILE_SPEED: f32 = 1000.0;
+const PROJECTILE_LIFETIME: f32 = 1.0;
 const PLAYER_SPEED: f32 = 250.0;
 const ATTACK_SPEED: f32 = 2.0;
 /// Actually, rate of exponential decay in the distance between camera and it's goal
@@ -21,7 +22,7 @@ pub fn game_plugin(app: &mut App) {
         )
         .add_systems(
             FixedUpdate,
-            (primary, (player_state, physics).chain()).run_if(in_state(GameState::Game)),
+            (primary, lifetime, (player_state, physics).chain()).run_if(in_state(GameState::Game)),
         )
         .add_systems(
             Update,
@@ -50,6 +51,17 @@ struct Player;
 struct Velocity(Vec3);
 #[derive(Component)]
 struct Position(Vec3);
+
+#[derive(Component)]
+struct Lifetime(Timer);
+fn lifetime(time: Res<Time>, mut commands: Commands, mut query: Query<(Entity, &mut Lifetime)>) {
+    let dt = time.delta();
+    query.iter_mut().for_each(|(e, mut l)| {
+        if l.0.tick(dt).finished() {
+            commands.entity(e).despawn_recursive()
+        }
+    })
+}
 
 /// Represents the internal, underlying state used in the game logic, not on the UI level.
 #[derive(Default, Component)]
@@ -180,15 +192,16 @@ fn primary(
             Projectile,
             Mesh2d(meshes.add(Circle::new(5.))),
             MeshMaterial2d(colors.green.clone()),
+            // TODO Bind Transform and Position together so those cannot be inserted with different values.
             Transform::from_translation(position.0),
             Position(position.0),
-            // TODO Is there a better way to get a vector of given length in the given direction
             Velocity(Vec3::lerp(
                 Vec3::ZERO,
                 (cursor_position.0.unwrap_or(Vec2::X).extend(0.0) - position.0).normalize(),
                 PROJECTILE_SPEED,
             )),
             StateScoped(GameState::Game),
+            Lifetime(Timer::from_seconds(PROJECTILE_LIFETIME, TimerMode::Once)),
         ));
 
         attack_timer.0.reset();
