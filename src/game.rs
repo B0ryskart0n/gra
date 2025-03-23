@@ -22,7 +22,7 @@ pub fn game_plugin(app: &mut App) {
         )
         .add_systems(
             FixedUpdate,
-            (primary, lifetime, (player_state, physics).chain()).run_if(in_state(GameState::Game)),
+            (attack, lifetime, (player_state, physics).chain()).run_if(in_state(GameState::Game)),
         )
         .add_systems(
             Update,
@@ -36,11 +36,11 @@ pub fn game_plugin(app: &mut App) {
 struct PlayerInput {
     direction: Vec3,
     dash: bool,
-    primary: bool,
+    attack: bool,
 }
 
 #[derive(Resource)]
-struct AttackTimer(Timer);
+struct AttackSpeed(Timer);
 
 #[derive(Component)]
 struct Projectile;
@@ -64,11 +64,12 @@ fn lifetime(time: Res<Time>, mut commands: Commands, mut query: Query<(Entity, &
 }
 
 /// Represents the internal, underlying state used in the game logic, not on the UI level.
-#[derive(Default, Component)]
-struct PlayerState {
-    // TODO maybe handle dashing / primary with a union since those should be exclusive
-    dashing: bool,
-    primary: bool,
+#[derive(PartialEq, Eq, Default, Component)]
+enum PlayerState {
+    #[default]
+    Idle,
+    Dashing,
+    Attacking,
 }
 
 fn init_basic_colors(mut commands: Commands, materials: ResMut<Assets<ColorMaterial>>) {
@@ -78,7 +79,7 @@ fn init_basic_colors(mut commands: Commands, materials: ResMut<Assets<ColorMater
 fn enter_game(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, colors: Res<BasicColorHandles>) {
     commands.init_resource::<PlayerInput>();
     commands.insert_resource(DashTimer(Timer::from_seconds(0.5, TimerMode::Once)));
-    commands.insert_resource(AttackTimer(Timer::from_seconds(1.0 / ATTACK_SPEED, TimerMode::Once)));
+    commands.insert_resource(AttackSpeed(Timer::from_seconds(1.0 / ATTACK_SPEED, TimerMode::Once)));
 
     commands.spawn((
         Mesh2d(meshes.add(Rectangle::new(1280., 720.))),
@@ -128,8 +129,8 @@ fn handle_player_input(
         (false, true, true, false) => DIRECTION_DOWNRIGHT,
     };
 
-    player_input.dash = keyboard.any_pressed(vec![KeyCode::ShiftLeft, KeyCode::Space]);
-    player_input.primary = mouse.pressed(MouseButton::Left);
+    player_input.dash = keyboard.any_just_pressed(vec![KeyCode::ShiftLeft, KeyCode::Space]);
+    player_input.attack = mouse.pressed(MouseButton::Left);
 }
 
 #[derive(Resource)]
@@ -145,25 +146,26 @@ fn player_state(
 
     let dt = time_fixed.delta();
 
-    // conscious short circuit
-    if state.dashing && dash_timer.0.tick(dt).finished() {
-        state.dashing = false;
+    if *state == PlayerState::Dashing && dash_timer.0.tick(dt).finished() {
+        *state = PlayerState::Idle;
         dash_timer.0.reset();
     }
-
-    if input.dash {
-        state.dashing = input.dash
+    if *state != PlayerState::Dashing {
+        *state = match (input.dash, input.attack) {
+            (true, _) => PlayerState::Dashing,
+            (false, true) => PlayerState::Attacking,
+            (false, false) => PlayerState::Idle,
+        };
     }
 
-    input.dash = false;
-
-    state.primary = input.primary;
-
-    // double the speed when dashing
-    let speed_mult = 1.0 + f32::from(state.dashing);
+    let speed_mult = match *state {
+        PlayerState::Idle => 1.0,
+        PlayerState::Dashing => 2.5,
+        PlayerState::Attacking => 0.75,
+    };
 
     velocity.0 = input.direction * speed_mult * PLAYER_SPEED;
-    // handled all input that accumulated since last `Update`
+    // TODO What happens when there are several FixedUpdates to be run?
     input.direction = Vec3::ZERO;
 }
 
@@ -173,21 +175,21 @@ fn physics(time_fixed: Res<Time<Fixed>>, mut query: Query<(&mut Position, &Veloc
         .for_each(|(mut pos, vel)| pos.0 += vel.0 * time_fixed.delta_secs());
 }
 
-fn primary(
+fn attack(
     time_fixed: Res<Time<Fixed>>,
     mut commands: Commands,
     query: Query<(&Position, &PlayerState), With<Player>>,
     cursor_position: Res<CursorPosition>,
     mut meshes: ResMut<Assets<Mesh>>,
     colors: Res<BasicColorHandles>,
-    mut attack_timer: ResMut<AttackTimer>,
+    mut attack_speed: ResMut<AttackSpeed>,
 ) {
     let (position, player_state) = query.single();
 
-    attack_timer.0.tick(time_fixed.delta());
+    attack_speed.0.tick(time_fixed.delta());
 
     // TODO Despawn bullets after some time
-    if player_state.primary && attack_timer.0.finished() {
+    if *player_state == PlayerState::Attacking && attack_speed.0.finished() {
         commands.spawn((
             Projectile,
             Mesh2d(meshes.add(Circle::new(5.))),
@@ -204,7 +206,7 @@ fn primary(
             Lifetime(Timer::from_seconds(PROJECTILE_LIFETIME, TimerMode::Once)),
         ));
 
-        attack_timer.0.reset();
+        attack_speed.0.reset();
     }
 }
 
@@ -216,11 +218,10 @@ fn display(
 ) {
     let (state, mut material) = player.single_mut();
 
-    if state.dashing {
-        material.0 = colors.blue.clone();
-    } else {
-        material.0 = colors.red.clone();
-    }
+    material.0 = match *state {
+        PlayerState::Dashing => colors.blue.clone(),
+        _ => colors.red.clone(),
+    };
 
     query
         .iter_mut()
