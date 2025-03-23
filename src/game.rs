@@ -188,7 +188,6 @@ fn attack(
 
     attack_speed.0.tick(time_fixed.delta());
 
-    // TODO Despawn bullets after some time
     if *player_state == PlayerState::Attacking && attack_speed.0.finished() {
         commands.spawn((
             Projectile,
