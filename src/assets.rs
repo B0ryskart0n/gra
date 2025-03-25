@@ -1,6 +1,7 @@
-use bevy::color::palettes::css::{BLUE, GREEN, GREY, RED};
+use bevy::color::palettes::css::{BLUE, GREEN, RED};
 use bevy::prelude::*;
 
+#[allow(dead_code)]
 #[derive(Resource)]
 pub struct BasicColorHandles {
     pub red: Handle<ColorMaterial>,
@@ -14,7 +15,7 @@ impl BasicColorHandles {
             red: materials.add(ColorMaterial::from_color(RED)),
             green: materials.add(ColorMaterial::from_color(GREEN)),
             blue: materials.add(ColorMaterial::from_color(BLUE)),
-            grey: materials.add(ColorMaterial::from_color(GREY)),
+            grey: materials.add(ColorMaterial::from_color(Color::srgb(0.3, 0.3, 0.3))),
         }
     }
 }

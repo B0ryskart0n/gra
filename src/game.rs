@@ -26,7 +26,7 @@ pub fn game_plugin(app: &mut App) {
         )
         .add_systems(
             Update,
-            (display, update_camera, exit_game_check).run_if(in_state(GameState::Game)),
+            (display, display_player_state, update_camera, exit_game_check).run_if(in_state(GameState::Game)),
         )
         .add_systems(OnExit(GameState::Game), exit_game);
 }
@@ -88,12 +88,11 @@ fn enter_game(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, colors: 
     ));
     commands.spawn((
         Player,
-        Mesh2d(meshes.add(Circle::new(25.))),
-        MeshMaterial2d(colors.red.clone()),
+        Sprite::from_color(Color::WHITE, Vec2::from((50.0, 50.0))),
         PlayerState::default(),
+        Transform::default(),
         Position(Vec3::from((0.0, 0.0, 1.0))),
         Velocity(Vec3::ZERO),
-        Transform::default(),
         StateScoped(GameState::Game),
     ));
 }
@@ -180,8 +179,6 @@ fn attack(
     mut commands: Commands,
     query: Query<(&Position, &PlayerState), With<Player>>,
     cursor_position: Res<CursorPosition>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    colors: Res<BasicColorHandles>,
     mut attack_speed: ResMut<AttackSpeed>,
 ) {
     let (position, player_state) = query.single();
@@ -191,8 +188,7 @@ fn attack(
     if *player_state == PlayerState::Attacking && attack_speed.0.finished() {
         commands.spawn((
             Projectile,
-            Mesh2d(meshes.add(Circle::new(5.))),
-            MeshMaterial2d(colors.green.clone()),
+            Sprite::from_color(Color::srgb(1.0, 1.0, 1.0), Vec2::from((5.0, 5.0))),
             // TODO Bind Transform and Position together so those cannot be inserted with different values.
             Transform::from_translation(position.0),
             Position(position.0),
@@ -210,21 +206,18 @@ fn attack(
 }
 
 /// Updates the visible components based on the physical state.
-fn display(
-    mut player: Query<(&PlayerState, &mut MeshMaterial2d<ColorMaterial>), With<Player>>,
-    mut query: Query<(&Position, &mut Transform)>,
-    colors: Res<BasicColorHandles>,
-) {
-    let (state, mut material) = player.single_mut();
-
-    material.0 = match *state {
-        PlayerState::Dashing => colors.blue.clone(),
-        _ => colors.red.clone(),
-    };
-
+fn display(mut query: Query<(&Position, &mut Transform), Changed<Position>>) {
     query
         .iter_mut()
         .for_each(|(pos, mut transform)| transform.translation = pos.0);
+}
+
+fn display_player_state(mut query: Query<(&mut Sprite, &PlayerState), Changed<PlayerState>>) {
+    query.iter_mut().for_each(|(mut sprite, state)| match *state {
+        PlayerState::Idle => sprite.color = Color::srgb(0.1, 1.0, 0.1),
+        PlayerState::Attacking => sprite.color = Color::srgb(1.0, 0.1, 0.1),
+        PlayerState::Dashing => sprite.color = Color::srgb(0.0, 0.1, 1.0),
+    })
 }
 
 fn update_camera(
