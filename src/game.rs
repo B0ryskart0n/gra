@@ -4,6 +4,7 @@ use super::assets::*;
 use super::utils::*;
 use bevy::prelude::*;
 
+const ENEMY_SIZE: f32 = 30.0;
 const PROJECTILE_SPEED: f32 = 1000.0;
 const PROJECTILE_LIFETIME: f32 = 1.0;
 const PLAYER_SPEED: f32 = 250.0;
@@ -22,7 +23,14 @@ pub fn game_plugin(app: &mut App) {
         )
         .add_systems(
             FixedUpdate,
-            (attack, lifetime, (player_state, physics).chain()).run_if(in_state(GameState::Game)),
+            (
+                spawn_enemy,
+                kill_enemy,
+                attack,
+                lifetime,
+                (player_state, physics).chain(),
+            )
+                .run_if(in_state(GameState::Game)),
         )
         .add_systems(
             Update,
@@ -31,25 +39,34 @@ pub fn game_plugin(app: &mut App) {
         .add_systems(OnExit(GameState::Game), exit_game);
 }
 
-/// Accumulates the input on `Update` schedule, is cleared and taken into account in `FixedUpdate`.
 #[derive(Resource, Default)]
 struct PlayerInput {
     direction: Vec3,
     dash: bool,
     attack: bool,
 }
-
 #[derive(Resource)]
 struct AttackSpeed(Timer);
+#[derive(Resource)]
+struct DashTimer(Timer);
+#[derive(Resource)]
+struct EnemySpawn(Timer);
 
 #[derive(Component)]
 struct Projectile;
 #[derive(Component)]
 struct Player;
-
+#[derive(PartialEq, Eq, Default, Component)]
+enum PlayerState {
+    #[default]
+    Idle,
+    Dashing,
+    Attacking,
+}
+#[derive(Component)]
+struct Enemy;
 #[derive(Component)]
 struct Velocity(Vec3);
-
 #[derive(Component)]
 struct Lifetime(Timer);
 fn lifetime(time: Res<Time>, mut commands: Commands, mut query: Query<(Entity, &mut Lifetime)>) {
@@ -61,27 +78,18 @@ fn lifetime(time: Res<Time>, mut commands: Commands, mut query: Query<(Entity, &
     })
 }
 
-/// Represents the internal, underlying state used in the game logic, not on the UI level.
-#[derive(PartialEq, Eq, Default, Component)]
-enum PlayerState {
-    #[default]
-    Idle,
-    Dashing,
-    Attacking,
-}
-
 fn init_basic_colors(mut commands: Commands, materials: ResMut<Assets<ColorMaterial>>) {
     commands.insert_resource(BasicColorHandles::init_simple_colors(materials));
 }
 
-fn enter_game(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, colors: Res<BasicColorHandles>) {
+fn enter_game(mut commands: Commands) {
     commands.init_resource::<PlayerInput>();
     commands.insert_resource(DashTimer(Timer::from_seconds(0.5, TimerMode::Once)));
     commands.insert_resource(AttackSpeed(Timer::from_seconds(1.0 / ATTACK_SPEED, TimerMode::Once)));
+    commands.insert_resource(EnemySpawn(Timer::from_seconds(10.0, TimerMode::Repeating)));
 
     commands.spawn((
-        Mesh2d(meshes.add(Rectangle::new(1280., 720.))),
-        MeshMaterial2d(colors.grey.clone()),
+        Sprite::from_color(Color::BLACK, Vec2::from((1280.0, 720.0))),
         StateScoped(GameState::Game),
     ));
     commands.spawn((
@@ -97,6 +105,53 @@ fn exit_game(mut commands: Commands) {
     commands.remove_resource::<PlayerInput>();
     commands.remove_resource::<DashTimer>();
     commands.remove_resource::<AttackSpeed>();
+}
+
+fn spawn_enemy(time: Res<Time>, mut commands: Commands, mut enemy_spawn: ResMut<EnemySpawn>) {
+    if enemy_spawn.0.tick(time.delta()).finished() {
+        commands.spawn((
+            Enemy,
+            Sprite::from_color(Color::srgb(1.0, 0.0, 0.4), Vec2::from((ENEMY_SIZE, ENEMY_SIZE))),
+            Transform::from_translation(Vec3::from((300.0, 300.0, 0.5))),
+            StateScoped(GameState::Game),
+        ));
+    }
+}
+
+fn hit(enemy_pos: Vec3, projectile_pos: Vec3) -> bool {
+    return enemy_pos.x - ENEMY_SIZE / 2.0 < projectile_pos.x
+        && projectile_pos.x < enemy_pos.x + ENEMY_SIZE / 2.0
+        && enemy_pos.y - ENEMY_SIZE / 2.0 < projectile_pos.y
+        && projectile_pos.y < enemy_pos.y + ENEMY_SIZE / 2.0;
+}
+
+fn kill_enemy(
+    mut commands: Commands,
+    enemies: Query<(Entity, &GlobalTransform), With<Enemy>>,
+    projectiles: Query<(Entity, &GlobalTransform), (With<Projectile>, Without<Enemy>)>,
+) {
+    enemies.iter().for_each(|(enemy, t)| {
+        info!(
+            "Enemy: {}; considering bullets: {:?}",
+            enemy,
+            projectiles
+                .iter()
+                .collect::<Vec<(Entity, &GlobalTransform)>>()
+                .clone()
+                .iter()
+                .map(|(e, _)| e)
+                .collect::<Vec<&Entity>>()
+        );
+        for (projectile, projectile_position) in projectiles.iter() {
+            if hit(t.translation(), projectile_position.translation()) {
+                info!("Despawning enemy: {} and projectile: {}", enemy, projectile);
+                commands.entity(enemy).despawn_recursive();
+                // a projectile that is being iterated might have already been despawned?
+                commands.get_entity(projectile).map(|ec| ec.despawn_recursive());
+                break;
+            }
+        }
+    });
 }
 
 // TODO Think about handling a situation where one swift button press is registered and that input is overriden in
@@ -130,9 +185,6 @@ fn handle_player_input(
     player_input.dash = keyboard.any_just_pressed(vec![KeyCode::ShiftLeft, KeyCode::Space]);
     player_input.attack = mouse.pressed(MouseButton::Left);
 }
-
-#[derive(Resource)]
-struct DashTimer(Timer);
 
 fn player_state(
     time_fixed: Res<Time<Fixed>>,
@@ -186,7 +238,7 @@ fn attack(
     attack_speed.0.tick(time_fixed.delta());
 
     if *player_state == PlayerState::Attacking && attack_speed.0.finished() {
-        commands.spawn((
+        let projectile = commands.spawn((
             Projectile,
             Sprite::from_color(Color::srgb(1.0, 1.0, 1.0), Vec2::from((5.0, 5.0))),
             Transform::from_translation(player_position),
@@ -198,6 +250,7 @@ fn attack(
             StateScoped(GameState::Game),
             Lifetime(Timer::from_seconds(PROJECTILE_LIFETIME, TimerMode::Once)),
         ));
+        info!("Spawning projectile: {:?}", projectile.id());
 
         attack_speed.0.reset();
     }
