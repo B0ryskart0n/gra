@@ -95,6 +95,8 @@ fn enter_game(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, colors: 
 }
 fn exit_game(mut commands: Commands) {
     commands.remove_resource::<PlayerInput>();
+    commands.remove_resource::<DashTimer>();
+    commands.remove_resource::<AttackSpeed>();
 }
 
 // TODO Think about handling a situation where one swift button press is registered and that input is overriden in
