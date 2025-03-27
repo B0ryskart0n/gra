@@ -26,7 +26,7 @@ pub fn game_plugin(app: &mut App) {
         )
         .add_systems(
             Update,
-            (display, display_player_state, update_camera, exit_game_check).run_if(in_state(GameState::Game)),
+            (display_player_state, update_camera, exit_game_check).run_if(in_state(GameState::Game)),
         )
         .add_systems(OnExit(GameState::Game), exit_game);
 }
@@ -49,8 +49,6 @@ struct Player;
 
 #[derive(Component)]
 struct Velocity(Vec3);
-#[derive(Component)]
-struct Position(Vec3);
 
 #[derive(Component)]
 struct Lifetime(Timer);
@@ -90,8 +88,7 @@ fn enter_game(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, colors: 
         Player,
         Sprite::from_color(Color::WHITE, Vec2::from((50.0, 50.0))),
         PlayerState::default(),
-        Transform::default(),
-        Position(Vec3::from((0.0, 0.0, 1.0))),
+        Transform::from_translation(Vec3::from((0.0, 0.0, 1.0))),
         Velocity(Vec3::ZERO),
         StateScoped(GameState::Game),
     ));
@@ -168,20 +165,21 @@ fn player_state(
     input.direction = Vec3::ZERO;
 }
 
-fn physics(time_fixed: Res<Time<Fixed>>, mut query: Query<(&mut Position, &Velocity)>) {
+fn physics(time_fixed: Res<Time<Fixed>>, mut query: Query<(&mut Transform, &Velocity)>) {
     query
         .iter_mut()
-        .for_each(|(mut pos, vel)| pos.0 += vel.0 * time_fixed.delta_secs());
+        .for_each(|(mut transform, vel)| transform.translation += vel.0 * time_fixed.delta_secs());
 }
 
 fn attack(
     time_fixed: Res<Time<Fixed>>,
     mut commands: Commands,
-    query: Query<(&Position, &PlayerState), With<Player>>,
+    query: Query<(&GlobalTransform, &PlayerState), With<Player>>,
     cursor_position: Res<CursorPosition>,
     mut attack_speed: ResMut<AttackSpeed>,
 ) {
-    let (position, player_state) = query.single();
+    let (player_transform, player_state) = query.single();
+    let player_position = player_transform.translation();
 
     attack_speed.0.tick(time_fixed.delta());
 
@@ -189,12 +187,10 @@ fn attack(
         commands.spawn((
             Projectile,
             Sprite::from_color(Color::srgb(1.0, 1.0, 1.0), Vec2::from((5.0, 5.0))),
-            // TODO Bind Transform and Position together so those cannot be inserted with different values.
-            Transform::from_translation(position.0),
-            Position(position.0),
+            Transform::from_translation(player_position),
             Velocity(Vec3::lerp(
                 Vec3::ZERO,
-                (cursor_position.0.unwrap_or(Vec2::X).extend(0.0) - position.0).normalize(),
+                (cursor_position.0.unwrap_or(Vec2::X).extend(0.0) - player_position).normalize(),
                 PROJECTILE_SPEED,
             )),
             StateScoped(GameState::Game),
@@ -203,13 +199,6 @@ fn attack(
 
         attack_speed.0.reset();
     }
-}
-
-/// Updates the visible components based on the physical state.
-fn display(mut query: Query<(&Position, &mut Transform), Changed<Position>>) {
-    query
-        .iter_mut()
-        .for_each(|(pos, mut transform)| transform.translation = pos.0);
 }
 
 fn display_player_state(mut query: Query<(&mut Sprite, &PlayerState), Changed<PlayerState>>) {
