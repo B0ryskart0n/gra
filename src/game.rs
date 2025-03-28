@@ -5,7 +5,9 @@ use super::utils::*;
 use bevy::prelude::*;
 
 const ENEMY_SIZE: f32 = 30.0;
-const PROJECTILE_SPEED: f32 = 1000.0;
+const ENEMY_HEALTH: f32 = 3.0;
+const ENEMY_SPAWN_RATE: f32 = 5.0;
+const PROJECTILE_SPEED: f32 = 750.0;
 const PROJECTILE_LIFETIME: f32 = 1.0;
 const PLAYER_SPEED: f32 = 250.0;
 const ATTACK_SPEED: f32 = 2.0;
@@ -25,7 +27,7 @@ pub fn game_plugin(app: &mut App) {
             FixedUpdate,
             (
                 spawn_enemy,
-                kill_enemy,
+                (enemy_hit, despawn_unhealthy).chain(),
                 attack,
                 lifetime,
                 (player_state, physics).chain(),
@@ -66,6 +68,8 @@ enum PlayerState {
 #[derive(Component)]
 struct Enemy;
 #[derive(Component)]
+struct Health(f32);
+#[derive(Component)]
 struct Velocity(Vec3);
 #[derive(Component)]
 struct Lifetime(Timer);
@@ -86,7 +90,7 @@ fn enter_game(mut commands: Commands) {
     commands.init_resource::<PlayerInput>();
     commands.insert_resource(DashTimer(Timer::from_seconds(0.5, TimerMode::Once)));
     commands.insert_resource(AttackSpeed(Timer::from_seconds(1.0 / ATTACK_SPEED, TimerMode::Once)));
-    commands.insert_resource(EnemySpawn(Timer::from_seconds(10.0, TimerMode::Repeating)));
+    commands.insert_resource(EnemySpawn(Timer::from_seconds(ENEMY_SPAWN_RATE, TimerMode::Repeating)));
 
     commands.spawn((
         Sprite::from_color(Color::BLACK, Vec2::from((1280.0, 720.0))),
@@ -111,11 +115,20 @@ fn spawn_enemy(time: Res<Time>, mut commands: Commands, mut enemy_spawn: ResMut<
     if enemy_spawn.0.tick(time.delta()).finished() {
         commands.spawn((
             Enemy,
-            Sprite::from_color(Color::srgb(1.0, 0.0, 0.4), Vec2::from((ENEMY_SIZE, ENEMY_SIZE))),
+            Health(ENEMY_HEALTH),
+            Sprite::from_color(Color::srgb(1.0, 0.0, 0.6), Vec2::from((ENEMY_SIZE, ENEMY_SIZE))),
             Transform::from_translation(Vec3::from((300.0, 300.0, 0.5))),
             StateScoped(GameState::Game),
         ));
     }
+}
+
+fn despawn_unhealthy(mut commands: Commands, query: Query<(Entity, &Health)>) {
+    query.iter().for_each(|(e, h)| {
+        if h.0 <= 0.0 {
+            commands.entity(e).despawn_recursive();
+        }
+    })
 }
 
 fn hit(enemy_pos: Vec3, projectile_pos: Vec3) -> bool {
@@ -125,33 +138,22 @@ fn hit(enemy_pos: Vec3, projectile_pos: Vec3) -> bool {
         && projectile_pos.y < enemy_pos.y + ENEMY_SIZE / 2.0;
 }
 
-fn kill_enemy(
+fn enemy_hit(
     mut commands: Commands,
-    enemies: Query<(Entity, &GlobalTransform), With<Enemy>>,
+    mut enemies: Query<(&mut Health, &GlobalTransform), With<Enemy>>,
     projectiles: Query<(Entity, &GlobalTransform), (With<Projectile>, Without<Enemy>)>,
 ) {
-    enemies.iter().for_each(|(enemy, t)| {
-        info!(
-            "Enemy: {}; considering bullets: {:?}",
-            enemy,
-            projectiles
-                .iter()
-                .collect::<Vec<(Entity, &GlobalTransform)>>()
-                .clone()
-                .iter()
-                .map(|(e, _)| e)
-                .collect::<Vec<&Entity>>()
-        );
-        for (projectile, projectile_position) in projectiles.iter() {
-            if hit(t.translation(), projectile_position.translation()) {
-                info!("Despawning enemy: {} and projectile: {}", enemy, projectile);
-                commands.entity(enemy).despawn_recursive();
-                // a projectile that is being iterated might have already been despawned?
-                commands.get_entity(projectile).map(|ec| ec.despawn_recursive());
+    projectiles.iter().for_each(|(projectile, projectile_transform)| {
+        for (mut health, enemy_position) in enemies.iter_mut() {
+            if hit(enemy_position.translation(), projectile_transform.translation()) {
+                health.0 = health.0 - 1.0;
+                commands.entity(projectile).despawn_recursive();
+                // Projectile despawned, so can't influence other enemies. Go to next projectile.
+                // Maybe if in the future projectiles can pass through then handle differently.
                 break;
             }
         }
-    });
+    })
 }
 
 // TODO Think about handling a situation where one swift button press is registered and that input is overriden in
@@ -238,7 +240,7 @@ fn attack(
     attack_speed.0.tick(time_fixed.delta());
 
     if *player_state == PlayerState::Attacking && attack_speed.0.finished() {
-        let projectile = commands.spawn((
+        commands.spawn((
             Projectile,
             Sprite::from_color(Color::srgb(1.0, 1.0, 1.0), Vec2::from((5.0, 5.0))),
             Transform::from_translation(player_position),
@@ -250,8 +252,6 @@ fn attack(
             StateScoped(GameState::Game),
             Lifetime(Timer::from_seconds(PROJECTILE_LIFETIME, TimerMode::Once)),
         ));
-        info!("Spawning projectile: {:?}", projectile.id());
-
         attack_speed.0.reset();
     }
 }
