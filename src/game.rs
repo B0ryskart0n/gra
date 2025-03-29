@@ -7,6 +7,7 @@ use bevy::prelude::*;
 const ENEMY_SIZE: f32 = 30.0;
 const ENEMY_HEALTH: f32 = 3.0;
 const ENEMY_SPAWN_RATE: f32 = 5.0;
+const ENEMY_SPEED: f32 = 150.0;
 const PROJECTILE_SPEED: f32 = 750.0;
 const PROJECTILE_LIFETIME: f32 = 1.0;
 const PLAYER_SPEED: f32 = 250.0;
@@ -30,7 +31,7 @@ pub fn game_plugin(app: &mut App) {
                 (enemy_hit, despawn_unhealthy).chain(),
                 attack,
                 lifetime,
-                (player_state, physics).chain(),
+                (player_state, enemy_state, physics).chain(),
             )
                 .run_if(in_state(GameState::Game)),
         )
@@ -116,11 +117,22 @@ fn spawn_enemy(time: Res<Time>, mut commands: Commands, mut enemy_spawn: ResMut<
         commands.spawn((
             Enemy,
             Health(ENEMY_HEALTH),
+            Velocity(Vec3::ZERO),
             Sprite::from_color(Color::srgb(1.0, 0.0, 0.6), Vec2::from((ENEMY_SIZE, ENEMY_SIZE))),
             Transform::from_translation(Vec3::from((300.0, 300.0, 0.5))),
             StateScoped(GameState::Game),
         ));
     }
+}
+
+fn enemy_state(
+    mut q_enemies: Query<(&GlobalTransform, &mut Velocity), With<Enemy>>,
+    q_player: Query<&GlobalTransform, (With<Player>, Without<Enemy>)>,
+) {
+    let player_pos = q_player.single().translation();
+    q_enemies
+        .iter_mut()
+        .for_each(|(t, mut v)| v.0 = ENEMY_SPEED * (player_pos - t.translation()).normalize_or_zero());
 }
 
 fn despawn_unhealthy(mut commands: Commands, query: Query<(Entity, &Health)>) {
