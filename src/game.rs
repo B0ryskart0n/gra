@@ -156,9 +156,10 @@ fn enemy_hit(
     })
 }
 
-// TODO Think about handling a situation where one swift button press is registered and that input is overriden in
-// next schedule run (when the button is already released) and the physics did not run, because the two frames were too
-// close to each other. Then the swift input is discarded in the physics simulation.
+/// In case of high frame rate (bigger than `FixedTime` 64Hz), if one swift button press is registered and
+/// that input is overriden in  next schedule run (when the button is already released) and
+/// the `FixedUpdate` schedule did not run, because the two frames were too close to each other,
+/// then the swift input is effectively discarded.
 fn handle_player_input(
     mouse: Res<ButtonInput<MouseButton>>,
     keyboard: Res<ButtonInput<KeyCode>>,
@@ -191,7 +192,7 @@ fn handle_player_input(
 fn player_state(
     time_fixed: Res<Time<Fixed>>,
     mut query: Query<(&mut PlayerState, &mut Velocity), With<Player>>,
-    mut input: ResMut<PlayerInput>,
+    input: Res<PlayerInput>,
     mut dash_timer: ResMut<DashTimer>,
 ) {
     let (mut state, mut velocity) = query.single_mut();
@@ -217,8 +218,6 @@ fn player_state(
     };
 
     velocity.0 = input.direction * speed_mult * PLAYER_SPEED;
-    // TODO What happens when there are several FixedUpdates to be run?
-    input.direction = Vec3::ZERO;
 }
 
 fn physics(time_fixed: Res<Time<Fixed>>, mut query: Query<(&mut Transform, &Velocity)>) {
