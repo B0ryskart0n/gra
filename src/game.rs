@@ -10,14 +10,17 @@ const ENEMY_SPAWN_RATE: f32 = 5.0;
 const ENEMY_SPEED: f32 = 150.0;
 const PROJECTILE_SPEED: f32 = 750.0;
 const PROJECTILE_LIFETIME: f32 = 1.0;
+const PLAYER_SIZE: f32 = 50.0;
 const PLAYER_SPEED: f32 = 250.0;
+const PLAYER_HEALTH: f32 = 5.0;
 const ATTACK_SPEED: f32 = 2.0;
 /// Actually, rate of exponential decay in the distance between camera and it's goal
 const CAMERA_SPEED: f32 = 6.0;
 const CURSOR_CAMERA_INFLUENCE: f32 = 0.4;
 
 pub fn game_plugin(app: &mut App) {
-    app.add_systems(OnEnter(GameState::Game), (init_basic_colors, enter_game).chain())
+    app.add_state_scoped_event::<PlayerDeath>(GameState::Game)
+        .add_systems(OnEnter(GameState::Game), (init_basic_colors, enter_game).chain())
         .add_systems(
             RunFixedMainLoop,
             handle_player_input
@@ -28,6 +31,7 @@ pub fn game_plugin(app: &mut App) {
             FixedUpdate,
             (
                 spawn_enemy,
+                player_hit,
                 (enemy_hit, despawn_unhealthy).chain(),
                 attack,
                 lifetime,
@@ -41,6 +45,9 @@ pub fn game_plugin(app: &mut App) {
         )
         .add_systems(OnExit(GameState::Game), exit_game);
 }
+
+#[derive(Event, Default)]
+struct PlayerDeath;
 
 #[derive(Resource, Default)]
 struct PlayerInput {
@@ -99,7 +106,8 @@ fn enter_game(mut commands: Commands) {
     ));
     commands.spawn((
         Player,
-        Sprite::from_color(Color::WHITE, Vec2::from((50.0, 50.0))),
+        Health(PLAYER_HEALTH),
+        Sprite::from_color(Color::WHITE, Vec2::from((PLAYER_SIZE, PLAYER_SIZE))),
         PlayerState::default(),
         Transform::from_translation(Vec3::from((0.0, 0.0, 1.0))),
         Velocity(Vec3::ZERO),
@@ -135,7 +143,7 @@ fn enemy_state(
         .for_each(|(t, mut v)| v.0 = ENEMY_SPEED * (player_pos - t.translation()).normalize_or_zero());
 }
 
-fn despawn_unhealthy(mut commands: Commands, query: Query<(Entity, &Health)>) {
+fn despawn_unhealthy(mut commands: Commands, query: Query<(Entity, &Health), Without<Player>>) {
     query.iter().for_each(|(e, h)| {
         if h.0 <= 0.0 {
             commands.entity(e).despawn_recursive();
@@ -143,12 +151,20 @@ fn despawn_unhealthy(mut commands: Commands, query: Query<(Entity, &Health)>) {
     })
 }
 
-fn hit(enemy_pos: Vec3, projectile_pos: Vec3) -> bool {
+fn hit_enemy_projectile(enemy_pos: Vec3, projectile_pos: Vec3) -> bool {
     return enemy_pos.x - ENEMY_SIZE / 2.0 < projectile_pos.x
         && projectile_pos.x < enemy_pos.x + ENEMY_SIZE / 2.0
         && enemy_pos.y - ENEMY_SIZE / 2.0 < projectile_pos.y
         && projectile_pos.y < enemy_pos.y + ENEMY_SIZE / 2.0;
 }
+fn hit_player_enemy(player_pos: Vec3, enemy_pos: Vec3) -> bool {
+    return player_pos.x - PLAYER_SIZE / 2.0 < enemy_pos.x + ENEMY_SIZE / 2.0
+        && player_pos.x + PLAYER_SIZE / 2.0 > enemy_pos.x - ENEMY_SIZE / 2.0
+        && player_pos.y - PLAYER_SIZE / 2.0 < enemy_pos.y + ENEMY_SIZE / 2.0
+        && player_pos.y + PLAYER_SIZE / 2.0 > enemy_pos.y - ENEMY_SIZE / 2.0;
+}
+
+// TODO Maybe solve collisions with events
 
 fn enemy_hit(
     mut commands: Commands,
@@ -157,7 +173,7 @@ fn enemy_hit(
 ) {
     projectiles.iter().for_each(|(projectile, projectile_transform)| {
         for (mut health, enemy_position) in enemies.iter_mut() {
-            if hit(enemy_position.translation(), projectile_transform.translation()) {
+            if hit_enemy_projectile(enemy_position.translation(), projectile_transform.translation()) {
                 health.0 = health.0 - 1.0;
                 commands.entity(projectile).despawn_recursive();
                 // Projectile despawned, so can't influence other enemies. Go to next projectile.
@@ -166,6 +182,26 @@ fn enemy_hit(
             }
         }
     })
+}
+fn player_hit(
+    q_enemies: Query<&GlobalTransform, With<Enemy>>,
+    mut q_player: Query<(&mut Health, &GlobalTransform, &PlayerState), (With<Player>, Without<Enemy>)>,
+    mut death_events: EventWriter<PlayerDeath>,
+) {
+    let (mut player_health, player_transform, player_state) = q_player.single_mut();
+    let damage = match *player_state {
+        PlayerState::Dashing => 0.0,
+        _ => q_enemies
+            .iter()
+            .map(|enemy_transform| hit_player_enemy(player_transform.translation(), enemy_transform.translation()))
+            .map(|b| b as i32 as f32)
+            .sum(),
+    };
+
+    player_health.0 -= damage;
+    if player_health.0 <= 0.0 {
+        death_events.send_default();
+    }
 }
 
 /// In case of high frame rate (bigger than `FixedTime` 64Hz), if one swift button press is registered and
@@ -300,8 +336,12 @@ fn update_camera(
         .smooth_nudge(&camera_goal, CAMERA_SPEED, time.delta_secs());
 }
 
-fn exit_game_check(keyboard: Res<ButtonInput<KeyCode>>, mut next_state: ResMut<NextState<GameState>>) {
-    if keyboard.pressed(KeyCode::Escape) {
+fn exit_game_check(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut next_state: ResMut<NextState<GameState>>,
+    death_events: EventReader<PlayerDeath>,
+) {
+    if keyboard.pressed(KeyCode::Escape) || !death_events.is_empty() {
         next_state.set(GameState::Menu);
     }
 }
