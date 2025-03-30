@@ -1,7 +1,8 @@
+#![allow(dead_code)]
+
 use bevy::color::palettes::css::{BLUE, GREEN, RED};
 use bevy::prelude::*;
 
-#[allow(dead_code)]
 #[derive(Resource)]
 pub struct BasicColorHandles {
     pub red: Handle<ColorMaterial>,

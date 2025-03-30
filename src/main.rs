@@ -1,9 +1,9 @@
-use bevy::prelude::*;
+use bevy::{dev_tools::fps_overlay::FpsOverlayPlugin, prelude::*};
 
 mod assets;
 mod game;
 mod menu;
-// mod settings;
+mod settings;
 mod splash;
 mod utils;
 
@@ -23,14 +23,15 @@ struct CursorPosition(Option<Vec2>);
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
-        .init_resource::<CursorPosition>()
-        .add_systems(Update, update_cursor_position)
-        .init_state::<GameState>() // Initial state will be the #[default]
         .enable_state_scoped_entities::<GameState>()
+        .init_state::<GameState>() // Initial state will be the #[default]
+        .init_resource::<CursorPosition>()
         .add_systems(Startup, spawn_camera)
+        .add_systems(Update, update_cursor_position)
+        .add_plugins((DefaultPlugins, FpsOverlayPlugin::default()))
         .add_plugins(splash::splash_plugin)
         .add_plugins(menu::menu_plugin)
+        .add_plugins(settings::plugin)
         .add_plugins(game::game_plugin)
         .run();
 }

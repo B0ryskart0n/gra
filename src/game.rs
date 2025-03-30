@@ -1,6 +1,5 @@
 use super::CursorPosition;
 use super::GameState;
-use super::assets::*;
 use super::utils::*;
 use bevy::prelude::*;
 
@@ -20,7 +19,7 @@ const CURSOR_CAMERA_INFLUENCE: f32 = 0.4;
 
 pub fn game_plugin(app: &mut App) {
     app.add_state_scoped_event::<PlayerDeath>(GameState::Game)
-        .add_systems(OnEnter(GameState::Game), (init_basic_colors, enter_game).chain())
+        .add_systems(OnEnter(GameState::Game), enter_game)
         .add_systems(
             RunFixedMainLoop,
             handle_player_input
@@ -88,10 +87,6 @@ fn lifetime(time: Res<Time>, mut commands: Commands, mut query: Query<(Entity, &
             commands.entity(e).despawn_recursive()
         }
     })
-}
-
-fn init_basic_colors(mut commands: Commands, materials: ResMut<Assets<ColorMaterial>>) {
-    commands.insert_resource(BasicColorHandles::init_simple_colors(materials));
 }
 
 fn enter_game(mut commands: Commands) {

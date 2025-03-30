@@ -6,11 +6,7 @@ pub fn menu_plugin(app: &mut App) {
         .add_systems(Update, menu_update.run_if(in_state(GameState::Menu)));
 }
 
-fn menu_enter(
-    mut commands: Commands,
-    _asset_server: Res<AssetServer>,
-    mut camera_query: Query<&mut Transform, With<Camera2d>>,
-) {
+fn menu_enter(mut commands: Commands, mut camera_query: Query<&mut Transform, With<Camera2d>>) {
     let mut camera = camera_query.single_mut();
     camera.translation = Vec3::ZERO;
 
