@@ -23,12 +23,13 @@ struct CursorPosition(Option<Vec2>);
 
 fn main() {
     App::new()
-        .enable_state_scoped_entities::<GameState>()
+        .add_plugins((DefaultPlugins, FpsOverlayPlugin::default()))
+        // Needs to be done after DefaultPlugins, because DefaultPlugins initializes StateTransitions
         .init_state::<GameState>() // Initial state will be the #[default]
+        .enable_state_scoped_entities::<GameState>()
         .init_resource::<CursorPosition>()
         .add_systems(Startup, spawn_camera)
         .add_systems(Update, update_cursor_position)
-        .add_plugins((DefaultPlugins, FpsOverlayPlugin::default()))
         .add_plugins(splash::splash_plugin)
         .add_plugins(menu::menu_plugin)
         .add_plugins(settings::plugin)
