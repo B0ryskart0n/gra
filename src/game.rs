@@ -41,7 +41,7 @@ pub fn game_plugin(app: &mut App) {
         )
         .add_systems(
             Update,
-            (display_player_state, update_camera, exit_game_check).run_if(in_state(GameState::Game)),
+            (display_player_state, update_camera, check_game_exit).run_if(in_state(GameState::Game)),
         )
         .add_systems(OnExit(GameState::Game), exit_game);
 }
@@ -124,6 +124,15 @@ fn enter_game(mut commands: Commands) {
         Velocity(Vec3::ZERO),
         StateScoped(GameState::Game),
     ));
+}
+fn check_game_exit(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut next_state: ResMut<NextState<GameState>>,
+    death_events: EventReader<PlayerDeath>,
+) {
+    if keyboard.just_pressed(KeyCode::Escape) || !death_events.is_empty() {
+        next_state.set(GameState::Menu);
+    }
 }
 fn exit_game(mut commands: Commands) {
     commands.remove_resource::<PlayerInput>();
@@ -346,14 +355,4 @@ fn update_camera(
     camera_transform
         .translation
         .smooth_nudge(&camera_goal, CAMERA_SPEED, time.delta_secs());
-}
-
-fn exit_game_check(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut next_state: ResMut<NextState<GameState>>,
-    death_events: EventReader<PlayerDeath>,
-) {
-    if keyboard.pressed(KeyCode::Escape) || !death_events.is_empty() {
-        next_state.set(GameState::Menu);
-    }
 }
