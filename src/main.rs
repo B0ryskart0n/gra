@@ -12,7 +12,7 @@ enum GameState {
     #[default]
     Splash,
     Menu,
-    //Settings,
+    Settings,
     Game,
     //Pause
 }
@@ -48,8 +48,7 @@ fn update_cursor_position(
     cursor_position.0 = window
         .cursor_position()
         .map(|viewport_position| camera.viewport_to_world_2d(camera_transform, viewport_position))
-        .map(|res| res.ok())
-        .flatten(); // from Option<Option<Vec2> to Option<Vec2>
+        .and_then(|res| res.ok());
 }
 
 fn spawn_camera(mut commands: Commands) {
