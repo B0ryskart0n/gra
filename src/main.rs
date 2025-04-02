@@ -1,4 +1,5 @@
-use bevy::{dev_tools::fps_overlay::FpsOverlayPlugin, prelude::*};
+use bevy::dev_tools::fps_overlay::FpsOverlayPlugin;
+use bevy::prelude::*;
 
 mod assets;
 mod game;
@@ -23,7 +24,7 @@ struct CursorPosition(Option<Vec2>);
 
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins, FpsOverlayPlugin::default()))
+        .add_plugins(DefaultPlugins)
         // Needs to be done after DefaultPlugins, because DefaultPlugins initializes StateTransitions
         .init_state::<GameState>() // Initial state will be the #[default]
         .enable_state_scoped_entities::<GameState>()
@@ -34,6 +35,7 @@ fn main() {
         .add_plugins(menu::menu_plugin)
         .add_plugins(settings::plugin)
         .add_plugins(game::game_plugin)
+        .add_plugins(FpsOverlayPlugin::default())
         .run();
 }
 
