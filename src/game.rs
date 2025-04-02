@@ -13,6 +13,7 @@ const PLAYER_SIZE: f32 = 50.0;
 const PLAYER_SPEED: f32 = 250.0;
 const PLAYER_HEALTH: f32 = 5.0;
 const ATTACK_SPEED: f32 = 2.0;
+const DASH_LENGTH: f32 = 0.5;
 /// Actually, rate of exponential decay in the distance between camera and it's goal
 const CAMERA_SPEED: f32 = 6.0;
 const CURSOR_CAMERA_INFLUENCE: f32 = 0.4;
@@ -56,10 +57,25 @@ struct PlayerInput {
 }
 #[derive(Resource)]
 struct AttackSpeed(Timer);
+impl Default for AttackSpeed {
+    fn default() -> Self {
+        AttackSpeed(Timer::from_seconds(1.0 / ATTACK_SPEED, TimerMode::Once))
+    }
+}
 #[derive(Resource)]
 struct DashTimer(Timer);
+impl Default for DashTimer {
+    fn default() -> Self {
+        DashTimer(Timer::from_seconds(DASH_LENGTH, TimerMode::Once))
+    }
+}
 #[derive(Resource)]
 struct EnemySpawn(Timer);
+impl Default for EnemySpawn {
+    fn default() -> Self {
+        EnemySpawn(Timer::from_seconds(ENEMY_SPAWN_RATE, TimerMode::Repeating))
+    }
+}
 
 #[derive(Component)]
 struct Projectile;
@@ -91,9 +107,9 @@ fn lifetime(time: Res<Time>, mut commands: Commands, mut query: Query<(Entity, &
 
 fn enter_game(mut commands: Commands) {
     commands.init_resource::<PlayerInput>();
-    commands.insert_resource(DashTimer(Timer::from_seconds(0.5, TimerMode::Once)));
-    commands.insert_resource(AttackSpeed(Timer::from_seconds(1.0 / ATTACK_SPEED, TimerMode::Once)));
-    commands.insert_resource(EnemySpawn(Timer::from_seconds(ENEMY_SPAWN_RATE, TimerMode::Repeating)));
+    commands.init_resource::<DashTimer>();
+    commands.init_resource::<AttackSpeed>();
+    commands.init_resource::<EnemySpawn>();
 
     commands.spawn((
         Sprite::from_color(Color::BLACK, Vec2::from((1280.0, 720.0))),
