@@ -113,6 +113,7 @@ fn exit_game(mut commands: Commands) {
     commands.remove_resource::<PlayerInput>();
     commands.remove_resource::<DashTimer>();
     commands.remove_resource::<AttackSpeed>();
+    commands.remove_resource::<EnemySpawn>();
 }
 
 fn spawn_enemy(time: Res<Time>, mut commands: Commands, mut enemy_spawn: ResMut<EnemySpawn>) {
