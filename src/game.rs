@@ -6,7 +6,7 @@ use bevy::prelude::*;
 const ENEMY_SIZE: f32 = 30.0;
 const ENEMY_HEALTH: f32 = 3.0;
 const ENEMY_SPAWN_RATE: f32 = 5.0;
-const ENEMY_SPEED: f32 = 150.0;
+const ENEMY_SPEED: f32 = 200.0;
 const PROJECTILE_SPEED: f32 = 750.0;
 const PROJECTILE_LIFETIME: f32 = 1.0;
 const PLAYER_SIZE: f32 = 50.0;
@@ -283,7 +283,7 @@ fn player_state(
     let speed_mult = match *state {
         PlayerState::Idle => 1.0,
         PlayerState::Dashing => 2.5,
-        PlayerState::Attacking => 0.75,
+        PlayerState::Attacking => 0.5,
     };
 
     velocity.0 = input.direction * speed_mult * PLAYER_SPEED;
