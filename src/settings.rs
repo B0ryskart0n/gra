@@ -37,29 +37,50 @@ fn enter_settings(mut commands: Commands) {
         .with_children(|parent| {
             parent
                 .spawn(Node {
+                    width: Val::Percent(100.0),
                     height: Val::Percent(80.0),
                     flex_direction: FlexDirection::Column,
+                    justify_content: JustifyContent::FlexStart,
+                    align_items: AlignItems::Center,
                     ..Default::default()
                 })
                 .with_children(|parent| {
-                    parent.spawn(Node::default()).with_children(|parent| {
-                        parent.spawn((
-                            Button,
-                            BackgroundColor::DEFAULT,
-                            Text::new("Resolution: "),
-                            ResolutionButton,
-                        ));
-                        parent.spawn((ResolutionText, Text::default()));
-                    });
-                    parent.spawn(Node::default()).with_children(|parent| {
-                        parent.spawn((
-                            Button,
-                            BackgroundColor::DEFAULT,
-                            Text::new("Window Mode: "),
-                            WindowModeButton,
-                        ));
-                        parent.spawn((WindowModeText, Text::default()));
-                    });
+                    parent
+                        .spawn(Node {
+                            width: Val::Percent(40.0),
+                            height: Val::Auto,
+                            flex_direction: FlexDirection::Row,
+                            justify_content: JustifyContent::SpaceBetween,
+                            align_items: AlignItems::Default,
+                            ..Default::default()
+                        })
+                        .with_children(|parent| {
+                            parent.spawn((
+                                Button,
+                                BackgroundColor::DEFAULT,
+                                Text::new("Resolution"),
+                                ResolutionButton,
+                            ));
+                            parent.spawn((ResolutionText, Text::default()));
+                        });
+                    parent
+                        .spawn(Node {
+                            width: Val::Percent(40.0),
+                            height: Val::Auto,
+                            flex_direction: FlexDirection::Row,
+                            justify_content: JustifyContent::SpaceBetween,
+                            align_items: AlignItems::Default,
+                            ..Default::default()
+                        })
+                        .with_children(|parent| {
+                            parent.spawn((
+                                Button,
+                                BackgroundColor::DEFAULT,
+                                Text::new("Window Mode"),
+                                WindowModeButton,
+                            ));
+                            parent.spawn((WindowModeText, Text::default()));
+                        });
                 });
             parent
                 .spawn(Node {
@@ -153,6 +174,7 @@ fn handle_window_mode_button(
 }
 
 // TODO Add loading last settings and falling back to creating defaults from system settings.
+// Also synchronize with bevy settings, since initial values will not match real ones.
 #[derive(Debug, Resource, Default)]
 pub struct UserSettings {
     pub resolution: Resolution,
@@ -189,24 +211,27 @@ impl std::fmt::Display for MyWindowMode {
 
 #[derive(Default, Debug)]
 pub enum Resolution {
-    QHD,
-    FullHD,
     #[default]
     HD,
+    TestingRes,
+    FullHD,
+    QHD,
 }
 impl Resolution {
     fn pixels(&self) -> [u16; 2] {
         match self {
-            Self::QHD => [2560, 1440],
-            Self::FullHD => [1920, 1080],
             Self::HD => [1280, 720],
+            Self::TestingRes => [1664, 936],
+            Self::FullHD => [1920, 1080],
+            Self::QHD => [2560, 1440],
         }
     }
     fn cycle(&mut self) {
         *self = match self {
-            Self::QHD => Self::FullHD,
-            Self::FullHD => Self::HD,
-            Self::HD => Self::QHD,
+            Self::HD => Self::TestingRes,
+            Self::TestingRes => Self::FullHD,
+            Self::FullHD => Self::QHD,
+            Self::QHD => Self::HD,
         };
     }
 }
