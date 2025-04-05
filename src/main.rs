@@ -1,4 +1,3 @@
-use bevy::dev_tools::fps_overlay::FpsOverlayPlugin;
 use bevy::prelude::*;
 
 mod assets;
@@ -35,14 +34,14 @@ fn main() {
         .add_plugins(menu::menu_plugin)
         .add_plugins(settings::plugin)
         .add_plugins(game::game_plugin)
-        .add_plugins(FpsOverlayPlugin::default())
+        .add_plugins(bevy::dev_tools::fps_overlay::FpsOverlayPlugin::default())
         .run();
 }
 
 fn update_cursor_position(
     mut cursor_position: ResMut<CursorPosition>,
     q_window: Query<&Window>,
-    q_camera: Query<(&Camera, &GlobalTransform)>,
+    q_camera: Query<(&Camera, &GlobalTransform), With<PrimaryCamera>>,
 ) {
     let (camera, camera_transform) = q_camera.single();
     let window = q_window.single();
@@ -54,5 +53,8 @@ fn update_cursor_position(
 }
 
 fn spawn_camera(mut commands: Commands) {
-    commands.spawn(Camera2d);
+    commands.spawn((Camera2d, PrimaryCamera));
 }
+
+#[derive(Component)]
+struct PrimaryCamera;

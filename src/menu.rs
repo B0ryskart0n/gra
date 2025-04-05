@@ -11,10 +11,23 @@ fn menu_enter(mut commands: Commands, mut camera_query: Query<&mut Transform, Wi
     let mut camera = camera_query.single_mut();
     camera.translation = Vec3::ZERO;
 
-    commands.spawn((
-        Text2d::new("Main menu, press <Enter> to Game"),
-        StateScoped(GameState::Menu),
-    ));
+    commands
+        .spawn((
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                flex_direction: FlexDirection::Column,
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..Default::default()
+            },
+            StateScoped(GameState::Menu),
+        ))
+        .with_children(|parent| {
+            parent.spawn((Button, Text::new("Game <Enter>")));
+            parent.spawn((Button, Text::new("Settings <Esc>")));
+            parent.spawn((Button, Text::new("Exit")));
+        });
 }
 fn menu_exit() {}
 
