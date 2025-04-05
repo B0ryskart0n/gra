@@ -14,7 +14,6 @@ enum GameState {
     Menu,
     Settings,
     Game,
-    //Pause
 }
 
 /// Cursor world position.
