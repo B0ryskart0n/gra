@@ -310,7 +310,7 @@ fn attack(
     if *player_state == PlayerState::Attacking && attack_speed.0.finished() {
         commands.spawn((
             Projectile,
-            Sprite::from_color(Color::srgb(1.0, 1.0, 1.0), Vec2::from((5.0, 5.0))),
+            Sprite::from_color(Color::WHITE, Vec2::from((5.0, 5.0))),
             Transform::from_translation(player_position),
             Velocity(Vec3::lerp(
                 Vec3::ZERO,
