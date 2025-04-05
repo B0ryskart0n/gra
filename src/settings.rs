@@ -133,9 +133,10 @@ fn handle_apply_button(
         Interaction::Hovered => BackgroundColor(BUTTON_HOVERED_COLOR),
         Interaction::Pressed => {
             let mut window = q_window.single_mut();
+            // Setting the mode before the resolution seems to work better.
+            window.mode = user_settings.window_mode.to_bevy();
             let pixels = user_settings.resolution.pixels();
             window.resolution.set(pixels[0].into(), pixels[1].into());
-            window.mode = user_settings.window_mode.to_bevy();
             BackgroundColor(BUTTON_PRESSED_COLOR)
         }
     }

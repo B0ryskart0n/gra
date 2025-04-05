@@ -22,7 +22,13 @@ struct CursorPosition(Option<Vec2>);
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                decorations: false,
+                ..Default::default()
+            }),
+            ..Default::default()
+        }))
         // Needs to be done after DefaultPlugins, because DefaultPlugins initializes StateTransitions
         .init_state::<GameState>() // Initial state will be the #[default]
         .enable_state_scoped_entities::<GameState>()
