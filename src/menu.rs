@@ -1,15 +1,13 @@
 use super::GameState;
+use crate::utils::*;
 use bevy::prelude::*;
-
-const BUTTON_HOVERED_COLOR: Color = Color::srgb(0.5, 0.5, 0.5);
-const BUTTON_PRESSED_COLOR: Color = Color::srgb(0.5, 1.0, 0.5);
 
 pub fn menu_plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::Menu), menu_enter)
         .add_systems(
             Update,
             (
-                menu_update,
+                handle_keyboard,
                 handle_game_button,
                 handle_settings_button,
                 handle_exit_button,
@@ -45,7 +43,7 @@ fn menu_enter(mut commands: Commands, mut camera_query: Query<&mut Transform, Wi
 }
 fn menu_exit() {}
 
-fn menu_update(keyboard: Res<ButtonInput<KeyCode>>, mut next_state: ResMut<NextState<GameState>>) {
+fn handle_keyboard(keyboard: Res<ButtonInput<KeyCode>>, mut next_state: ResMut<NextState<GameState>>) {
     if keyboard.just_pressed(KeyCode::Enter) {
         next_state.set(GameState::Game);
     }
