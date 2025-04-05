@@ -122,6 +122,7 @@ fn handle_menu_button(
         }
     }
 }
+// TODO Problems in non-windowed mode. Experiment what happens when only window_mode is changed.
 fn handle_apply_button(
     mut q_button: Query<(&Interaction, &mut BackgroundColor), With<ApplyButton>>,
     mut q_window: Query<&mut Window, Without<ApplyButton>>,
