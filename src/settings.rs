@@ -223,7 +223,7 @@ impl Resolution {
     fn pixels(&self) -> [u16; 2] {
         match self {
             Self::HD => [1280, 720],
-            Self::TestingRes => [1664, 936],
+            Self::TestingRes => [1600, 900],
             Self::FullHD => [1920, 1080],
             Self::QHD => [2560, 1440],
         }
