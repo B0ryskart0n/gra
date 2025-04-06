@@ -2,6 +2,8 @@ use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
 use bevy::ui::BackgroundColor;
 
+/// Takes the Result of `.get_single_mut` called on a query for Button that should be updated
+/// based on the interaction and the closure to call is it is pressed.
 pub fn button_interaction(
     button_query_result: Result<(&Interaction, Mut<BackgroundColor>), QuerySingleError>,
     pressed: impl FnOnce(),
@@ -22,11 +24,7 @@ pub fn button_interaction(
 #[require(Button, BackgroundColor)]
 pub struct ButtonWithBackground;
 
-#[derive(Component, Default)]
-#[require(Node(init_parent_node))]
-pub struct ParentNode;
-
-fn init_parent_node() -> Node {
+pub fn typical_parent_node() -> Node {
     Node {
         width: Val::Percent(100.0),
         height: Val::Percent(100.0),

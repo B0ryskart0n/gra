@@ -1,5 +1,5 @@
 use crate::GameState;
-use crate::utils::*;
+use crate::ui::*;
 use bevy::prelude::*;
 use bevy::window::WindowMode;
 
@@ -17,23 +17,12 @@ pub fn plugin(app: &mut App) {
                 handle_window_mode_button,
             )
                 .run_if(in_state(GameState::Settings)),
-        )
-        .add_systems(OnExit(GameState::Settings), exit_settings);
+        );
 }
 
 fn enter_settings(mut commands: Commands) {
     commands
-        .spawn((
-            Node {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                flex_direction: FlexDirection::Column,
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                ..Default::default()
-            },
-            StateScoped(GameState::Settings),
-        ))
+        .spawn((typical_parent_node(), StateScoped(GameState::Settings)))
         .with_children(|parent| {
             parent
                 .spawn(Node {
@@ -55,12 +44,7 @@ fn enter_settings(mut commands: Commands) {
                             ..Default::default()
                         })
                         .with_children(|parent| {
-                            parent.spawn((
-                                Button,
-                                BackgroundColor::DEFAULT,
-                                Text::new("Resolution"),
-                                ResolutionButton,
-                            ));
+                            parent.spawn((ResolutionButton, Text::new("Resolution")));
                             parent.spawn((ResolutionText, Text::default()));
                         });
                     parent
@@ -73,12 +57,7 @@ fn enter_settings(mut commands: Commands) {
                             ..Default::default()
                         })
                         .with_children(|parent| {
-                            parent.spawn((
-                                Button,
-                                BackgroundColor::DEFAULT,
-                                Text::new("Window Mode"),
-                                WindowModeButton,
-                            ));
+                            parent.spawn((WindowModeButton, Text::new("Window Mode")));
                             parent.spawn((WindowModeText, Text::default()));
                         });
                 });
@@ -89,8 +68,8 @@ fn enter_settings(mut commands: Commands) {
                     ..Default::default()
                 })
                 .with_children(|parent| {
-                    parent.spawn((Button, BackgroundColor::DEFAULT, Text::new("Menu"), MenuButton));
-                    parent.spawn((Button, BackgroundColor::DEFAULT, Text::new("Apply"), ApplyButton));
+                    parent.spawn((MenuButton, Text::new("Menu")));
+                    parent.spawn((ApplyButton, Text::new("Apply")));
                 });
         });
 }
@@ -107,72 +86,37 @@ fn handle_keyboard(keyboard: Res<ButtonInput<KeyCode>>, mut next_state: ResMut<N
         next_state.set(GameState::Menu);
     }
 }
-fn exit_settings() {}
 fn handle_menu_button(
-    mut q_button: Query<(&Interaction, &mut BackgroundColor), With<MenuButton>>,
+    mut q_button: Query<(&Interaction, &mut BackgroundColor), (With<MenuButton>, Changed<Interaction>)>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
-    let (interaction, mut color) = q_button.single_mut();
-    *color = match interaction {
-        Interaction::None => BackgroundColor::DEFAULT,
-        Interaction::Hovered => BackgroundColor(BUTTON_HOVERED_COLOR),
-        Interaction::Pressed => {
-            next_state.set(GameState::Menu);
-            BackgroundColor(BUTTON_PRESSED_COLOR)
-        }
-    }
+    button_interaction(q_button.get_single_mut(), || next_state.set(GameState::Menu));
 }
-// TODO Problems in non-windowed mode. Experiment what happens when only window_mode is changed.
 fn handle_apply_button(
-    mut q_button: Query<(&Interaction, &mut BackgroundColor), With<ApplyButton>>,
+    mut q_button: Query<(&Interaction, &mut BackgroundColor), (With<ApplyButton>, Changed<Interaction>)>,
     mut q_window: Query<&mut Window, Without<ApplyButton>>,
     user_settings: Res<UserSettings>,
 ) {
-    let (interaction, mut color) = q_button.single_mut();
-    *color = match interaction {
-        Interaction::None => BackgroundColor::DEFAULT,
-        Interaction::Hovered => BackgroundColor(BUTTON_HOVERED_COLOR),
-        Interaction::Pressed => {
-            let mut window = q_window.single_mut();
-            // Setting the mode before the resolution seems to work better.
-            window.mode = user_settings.window_mode.to_bevy();
-            let pixels = user_settings.resolution.pixels();
-            window.resolution.set(pixels[0].into(), pixels[1].into());
-            BackgroundColor(BUTTON_PRESSED_COLOR)
-        }
-    }
+    button_interaction(q_button.get_single_mut(), || {
+        let mut window = q_window.single_mut();
+        // TODO Problems in non-windowed mode. Experiment what happens when only window_mode is changed.
+        // Setting the mode before the resolution seems to work better.
+        window.mode = user_settings.window_mode.to_bevy();
+        let pixels = user_settings.resolution.pixels();
+        window.resolution.set(pixels[0].into(), pixels[1].into());
+    });
 }
-/// Does NOT fail if the single entity was not found.
 fn handle_resolution_button(
     mut q_button: Query<(&Interaction, &mut BackgroundColor), (With<ResolutionButton>, Changed<Interaction>)>,
     mut user_settings: ResMut<UserSettings>,
 ) {
-    if let Ok((interaction, mut color)) = q_button.get_single_mut() {
-        *color = match interaction {
-            Interaction::None => BackgroundColor::DEFAULT,
-            Interaction::Hovered => BackgroundColor(BUTTON_HOVERED_COLOR),
-            Interaction::Pressed => {
-                user_settings.resolution.cycle();
-                BackgroundColor(BUTTON_PRESSED_COLOR)
-            }
-        }
-    }
+    button_interaction(q_button.get_single_mut(), || user_settings.resolution.cycle());
 }
-/// Does NOT fail if the single entity was not found.
 fn handle_window_mode_button(
     mut q_button: Query<(&Interaction, &mut BackgroundColor), (With<WindowModeButton>, Changed<Interaction>)>,
     mut user_settings: ResMut<UserSettings>,
 ) {
-    if let Ok((interaction, mut color)) = q_button.get_single_mut() {
-        *color = match interaction {
-            Interaction::None => BackgroundColor::DEFAULT,
-            Interaction::Hovered => BackgroundColor(BUTTON_HOVERED_COLOR),
-            Interaction::Pressed => {
-                user_settings.window_mode.cycle();
-                BackgroundColor(BUTTON_PRESSED_COLOR)
-            }
-        }
-    }
+    button_interaction(q_button.get_single_mut(), || user_settings.window_mode.cycle());
 }
 
 // TODO Add loading last settings and falling back to creating defaults from system settings.
@@ -244,13 +188,18 @@ impl std::fmt::Display for Resolution {
 }
 
 #[derive(Component)]
+#[require(ButtonWithBackground)]
 struct ApplyButton;
 #[derive(Component)]
+#[require(ButtonWithBackground)]
 struct MenuButton;
 #[derive(Component)]
+#[require(ButtonWithBackground)]
 struct ResolutionButton;
 #[derive(Component)]
+#[require(ButtonWithBackground)]
 struct WindowModeButton;
+
 #[derive(Component)]
 struct ResolutionText;
 #[derive(Component)]

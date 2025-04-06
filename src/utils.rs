@@ -1,9 +1,6 @@
 use bevy::prelude::*;
 use std::f32::consts::FRAC_1_SQRT_2;
 
-pub const BUTTON_HOVERED_COLOR: Color = Color::srgb(0.5, 0.5, 0.5);
-pub const BUTTON_PRESSED_COLOR: Color = Color::srgb(0.5, 1.0, 0.5);
-
 pub const DIRECTION_RIGHT: Vec3 = Vec3::X;
 pub const DIRECTION_UPRIGHT: Vec3 = Vec3 {
     x: FRAC_1_SQRT_2,

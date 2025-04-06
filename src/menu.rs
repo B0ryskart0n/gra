@@ -23,7 +23,7 @@ fn menu_enter(mut commands: Commands, mut camera_query: Query<&mut Transform, Wi
     camera.translation = Vec3::ZERO;
 
     commands
-        .spawn((ParentNode, StateScoped(GameState::Menu)))
+        .spawn((typical_parent_node(), StateScoped(GameState::Menu)))
         .with_children(|parent| {
             parent.spawn((GameButton, Text::new("Play")));
             parent.spawn((SettingsButton, Text::new("Settings")));
