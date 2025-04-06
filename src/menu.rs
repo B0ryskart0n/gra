@@ -3,21 +3,19 @@ use crate::ui::*;
 use bevy::prelude::*;
 
 pub fn menu_plugin(app: &mut App) {
-    app.add_systems(OnEnter(GameState::Menu), menu_enter)
-        .add_systems(
-            Update,
-            (
-                handle_keyboard,
-                handle_game_button,
-                handle_settings_button,
-                handle_exit_button,
-            )
-                .run_if(in_state(GameState::Menu)),
+    app.add_systems(OnEnter(GameState::Menu), setup_ui).add_systems(
+        Update,
+        (
+            handle_keyboard,
+            handle_game_button,
+            handle_settings_button,
+            handle_exit_button,
         )
-        .add_systems(OnExit(GameState::Menu), menu_exit);
+            .run_if(in_state(GameState::Menu)),
+    );
 }
 
-fn menu_enter(mut commands: Commands, mut camera_query: Query<&mut Transform, With<Camera2d>>) {
+fn setup_ui(mut commands: Commands, mut camera_query: Query<&mut Transform, With<Camera2d>>) {
     let mut camera = camera_query.single_mut();
     // TODO Consider whether this should be part of menu or game logic.
     camera.translation = Vec3::ZERO;
@@ -30,7 +28,6 @@ fn menu_enter(mut commands: Commands, mut camera_query: Query<&mut Transform, Wi
             parent.spawn((ExitButton, Text::new("Exit")));
         });
 }
-fn menu_exit() {}
 
 fn handle_keyboard(keyboard: Res<ButtonInput<KeyCode>>, mut next_state: ResMut<NextState<GameState>>) {
     if keyboard.just_pressed(KeyCode::Enter) {

@@ -5,7 +5,7 @@ use bevy::window::WindowMode;
 
 pub fn plugin(app: &mut App) {
     app.init_resource::<UserSettings>()
-        .add_systems(OnEnter(GameState::Settings), enter_settings)
+        .add_systems(OnEnter(GameState::Settings), setup_ui)
         .add_systems(
             Update,
             (
@@ -20,7 +20,7 @@ pub fn plugin(app: &mut App) {
         );
 }
 
-fn enter_settings(mut commands: Commands) {
+fn setup_ui(mut commands: Commands) {
     commands
         .spawn((typical_parent_node(), StateScoped(GameState::Settings)))
         .with_children(|parent| {
