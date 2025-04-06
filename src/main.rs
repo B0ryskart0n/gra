@@ -5,6 +5,7 @@ mod game;
 mod menu;
 mod settings;
 mod splash;
+mod ui;
 mod utils;
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]

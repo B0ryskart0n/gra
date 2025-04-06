@@ -1,5 +1,5 @@
 use super::GameState;
-use crate::utils::*;
+use crate::ui::*;
 use bevy::prelude::*;
 
 pub fn menu_plugin(app: &mut App) {
@@ -23,22 +23,11 @@ fn menu_enter(mut commands: Commands, mut camera_query: Query<&mut Transform, Wi
     camera.translation = Vec3::ZERO;
 
     commands
-        .spawn((
-            Node {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                flex_direction: FlexDirection::Column,
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                ..Default::default()
-            },
-            StateScoped(GameState::Menu),
-        ))
+        .spawn((ParentNode, StateScoped(GameState::Menu)))
         .with_children(|parent| {
-            // TODO Create a component that is essentially `Button` with hover and press functions?
-            parent.spawn((Button, BackgroundColor::DEFAULT, Text::new("Play"), GameButton));
-            parent.spawn((Button, BackgroundColor::DEFAULT, Text::new("Settings"), SettingsButton));
-            parent.spawn((Button, BackgroundColor::DEFAULT, Text::new("Exit"), ExitButton));
+            parent.spawn((GameButton, Text::new("Play")));
+            parent.spawn((SettingsButton, Text::new("Settings")));
+            parent.spawn((ExitButton, Text::new("Exit")));
         });
 }
 fn menu_exit() {}
@@ -52,54 +41,33 @@ fn handle_keyboard(keyboard: Res<ButtonInput<KeyCode>>, mut next_state: ResMut<N
     }
 }
 
-// TODO Maybe it would be faster to filter for `Changed<Interaction`,
-// but that would be more code and the performance gain should be negligable.
 fn handle_game_button(
-    mut q_button: Query<(&Interaction, &mut BackgroundColor), With<GameButton>>,
+    mut q_button: Query<(&Interaction, &mut BackgroundColor), (With<GameButton>, Changed<Interaction>)>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
-    let (interaction, mut color) = q_button.single_mut();
-    *color = match interaction {
-        Interaction::None => BackgroundColor::DEFAULT,
-        Interaction::Hovered => BackgroundColor(BUTTON_HOVERED_COLOR),
-        Interaction::Pressed => {
-            next_state.set(GameState::Game);
-            BackgroundColor(BUTTON_PRESSED_COLOR)
-        }
-    }
+    button_interaction(q_button.get_single_mut(), || next_state.set(GameState::Game));
 }
 fn handle_settings_button(
     mut q_button: Query<(&Interaction, &mut BackgroundColor), With<SettingsButton>>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
-    let (interaction, mut color) = q_button.single_mut();
-    *color = match interaction {
-        Interaction::None => BackgroundColor::DEFAULT,
-        Interaction::Hovered => BackgroundColor(BUTTON_HOVERED_COLOR),
-        Interaction::Pressed => {
-            next_state.set(GameState::Settings);
-            BackgroundColor(BUTTON_PRESSED_COLOR)
-        }
-    }
+    button_interaction(q_button.get_single_mut(), || next_state.set(GameState::Settings));
 }
 fn handle_exit_button(
     mut q_button: Query<(&Interaction, &mut BackgroundColor), With<ExitButton>>,
     mut exit_events: EventWriter<AppExit>,
 ) {
-    let (interaction, mut color) = q_button.single_mut();
-    *color = match interaction {
-        Interaction::None => BackgroundColor::DEFAULT,
-        Interaction::Hovered => BackgroundColor(BUTTON_HOVERED_COLOR),
-        Interaction::Pressed => {
-            exit_events.send_default();
-            BackgroundColor(BUTTON_PRESSED_COLOR)
-        }
-    }
+    button_interaction(q_button.get_single_mut(), || {
+        exit_events.send_default();
+    });
 }
 
 #[derive(Component)]
+#[require(ButtonWithBackground)]
 struct GameButton;
 #[derive(Component)]
+#[require(ButtonWithBackground)]
 struct SettingsButton;
 #[derive(Component)]
+#[require(ButtonWithBackground)]
 struct ExitButton;
