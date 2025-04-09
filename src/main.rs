@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::window::WindowResolution;
 
 mod assets;
 mod game;
@@ -7,6 +8,10 @@ mod settings;
 mod splash;
 mod ui;
 mod utils;
+
+const LOGICAL_WIDTH: f32 = 640.0;
+const LOGICAL_HEIGHT: f32 = 360.0;
+const SCALE: f32 = 2.0;
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
 enum GameState {
@@ -23,13 +28,17 @@ struct CursorPosition(Option<Vec2>);
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            primary_window: Some(Window {
-                decorations: false,
+        .add_plugins(
+            DefaultPlugins.set(WindowPlugin {
+                primary_window: Some(Window {
+                    decorations: false,
+                    resolution: WindowResolution::new(LOGICAL_WIDTH * SCALE, LOGICAL_HEIGHT * SCALE)
+                        .with_scale_factor_override(SCALE),
+                    ..Default::default()
+                }),
                 ..Default::default()
             }),
-            ..Default::default()
-        }))
+        )
         // Needs to be done after DefaultPlugins, because DefaultPlugins initializes StateTransitions
         .init_state::<GameState>() // Initial state will be the #[default]
         .enable_state_scoped_entities::<GameState>()
