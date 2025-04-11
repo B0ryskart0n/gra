@@ -2,6 +2,11 @@ use crate::GameState;
 use crate::ui::*;
 use bevy::prelude::*;
 use bevy::window::WindowMode;
+use bevy::window::WindowResolution;
+
+pub const LOGICAL_WIDTH: u16 = 640;
+pub const LOGICAL_HEIGHT: u16 = 360;
+pub const SCALE: f32 = 2.0;
 
 pub fn plugin(app: &mut App) {
     app.init_resource::<UserSettings>()
@@ -9,7 +14,8 @@ pub fn plugin(app: &mut App) {
         .add_systems(
             Update,
             (
-                update_texts,
+                update_text_mode,
+                update_text_res,
                 handle_keyboard,
                 handle_menu_button,
                 handle_apply_button,
@@ -73,13 +79,11 @@ fn setup_ui(mut commands: Commands) {
                 });
         });
 }
-fn update_texts(
-    mut q_resolution: Query<&mut Text, With<ResolutionText>>,
-    mut q_window_mode: Query<&mut Text, (With<WindowModeText>, Without<ResolutionText>)>,
-    user_settings: Res<UserSettings>,
-) {
-    q_resolution.single_mut().0 = user_settings.resolution.to_string();
-    q_window_mode.single_mut().0 = user_settings.window_mode.to_string();
+fn update_text_mode(mut q_window_mode: Query<&mut Text, With<WindowModeText>>, user_settings: Res<UserSettings>) {
+    q_window_mode.single_mut().0 = user_settings.window.mode_str();
+}
+fn update_text_res(mut q_resolution: Query<&mut Text, With<ResolutionText>>, user_settings: Res<UserSettings>) {
+    q_resolution.single_mut().0 = user_settings.window.res_str();
 }
 fn handle_keyboard(keyboard: Res<ButtonInput<KeyCode>>, mut next_state: ResMut<NextState<GameState>>) {
     if keyboard.just_pressed(KeyCode::Escape) {
@@ -94,90 +98,123 @@ fn handle_menu_button(
 }
 fn handle_apply_button(
     mut q_button: Query<(&Interaction, &mut BackgroundColor), (With<ApplyButton>, Changed<Interaction>)>,
-    mut q_window: Query<&mut Window, Without<ApplyButton>>,
+    mut q_window: Query<&mut Window>,
     user_settings: Res<UserSettings>,
 ) {
     button_interaction(q_button.get_single_mut(), || {
         let mut window = q_window.single_mut();
-        // TODO Problems in non-windowed mode. Experiment what happens when only window_mode is changed.
         // Setting the mode before the resolution seems to work better.
-        window.mode = user_settings.window_mode.to_bevy();
-        let pixels = user_settings.resolution.pixels();
-        window.resolution.set(pixels[0].into(), pixels[1].into());
+        window.mode = user_settings.window.to_bevy_mode();
+        window.resolution = user_settings.window.to_bevy_res();
     });
 }
 fn handle_resolution_button(
     mut q_button: Query<(&Interaction, &mut BackgroundColor), (With<ResolutionButton>, Changed<Interaction>)>,
     mut user_settings: ResMut<UserSettings>,
 ) {
-    button_interaction(q_button.get_single_mut(), || user_settings.resolution.cycle());
+    button_interaction(q_button.get_single_mut(), || user_settings.window.cycle_res());
 }
 fn handle_window_mode_button(
     mut q_button: Query<(&Interaction, &mut BackgroundColor), (With<WindowModeButton>, Changed<Interaction>)>,
     mut user_settings: ResMut<UserSettings>,
 ) {
-    button_interaction(q_button.get_single_mut(), || user_settings.window_mode.cycle());
+    button_interaction(q_button.get_single_mut(), || user_settings.window.cycle_mode());
 }
 
 // TODO Add loading last settings and falling back to creating defaults from system settings.
 // Also synchronize with bevy settings, since initial values will not match real ones.
 #[derive(Debug, Resource, Default)]
 pub struct UserSettings {
-    pub resolution: Resolution,
-    pub window_mode: MyWindowMode,
+    pub window: WindowSettings,
 }
-#[derive(Debug, Default)]
-pub enum MyWindowMode {
-    #[default]
-    Windowed,
+// TODO Take Monitor information into account when determining resoltuions.
+#[derive(Debug)]
+pub enum WindowSettings {
+    Windowed(Resolution),
     Borderless,
     Fullscreen,
 }
-impl MyWindowMode {
-    fn to_bevy(&self) -> WindowMode {
+impl Default for WindowSettings {
+    fn default() -> Self {
+        Self::Windowed(Resolution::Logical)
+    }
+}
+impl WindowSettings {
+    fn to_bevy_mode(&self) -> WindowMode {
         match self {
-            Self::Windowed => WindowMode::Windowed,
+            Self::Windowed(_) => WindowMode::Windowed,
             Self::Borderless => WindowMode::BorderlessFullscreen(MonitorSelection::Current),
             Self::Fullscreen => WindowMode::Fullscreen(MonitorSelection::Current),
         }
     }
-    fn cycle(&mut self) {
-        *self = match self {
-            Self::Windowed => Self::Borderless,
-            Self::Borderless => Self::Fullscreen,
-            Self::Fullscreen => Self::Windowed,
+    fn to_bevy_res(&self) -> WindowResolution {
+        match self {
+            WindowSettings::Windowed(res) => {
+                WindowResolution::from(res.pixels()).with_scale_factor_override(res.scale())
+            }
+            _ => WindowResolution::from(Resolution::FullHD.pixels())
+                .with_scale_factor_override(Resolution::FullHD.scale()),
         }
     }
-}
-impl std::fmt::Display for MyWindowMode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+    fn cycle_mode(&mut self) {
+        *self = match self {
+            Self::Windowed(_) => Self::Borderless,
+            Self::Borderless => Self::Fullscreen,
+            Self::Fullscreen => Self::default(),
+        }
+    }
+    fn cycle_res(&mut self) {
+        match self {
+            Self::Windowed(res) => res.cycle(),
+            _ => (),
+        }
+    }
+    fn mode_str(&self) -> String {
+        match self {
+            Self::Windowed(_) => "Windowed".into(),
+            Self::Borderless => "Borderless".into(),
+            Self::Fullscreen => "Fullscreen".into(),
+        }
+    }
+    fn res_str(&self) -> String {
+        match self {
+            Self::Windowed(res) => res.to_string(),
+            _ => Resolution::FullHD.to_string(),
+        }
     }
 }
 
 #[derive(Default, Debug)]
 pub enum Resolution {
     #[default]
+    Logical,
     HD,
-    TestingRes,
     FullHD,
     QHD,
 }
 impl Resolution {
+    fn scale(&self) -> f32 {
+        match self {
+            Self::Logical => 1.0,
+            Self::HD => 2.0,
+            Self::FullHD => 3.0,
+            Self::QHD => 4.0,
+        }
+    }
     fn pixels(&self) -> [u16; 2] {
         match self {
+            Self::Logical => [LOGICAL_WIDTH, LOGICAL_HEIGHT],
             Self::HD => [1280, 720],
-            Self::TestingRes => [1600, 900],
             Self::FullHD => [1920, 1080],
             Self::QHD => [2560, 1440],
         }
     }
     fn cycle(&mut self) {
         *self = match self {
-            Self::HD => Self::TestingRes,
-            Self::TestingRes => Self::FullHD,
+            Self::Logical => Self::HD,
+            Self::HD => Self::FullHD,
             Self::FullHD => Self::QHD,
-            Self::QHD => Self::HD,
+            Self::QHD => Self::Logical,
         };
     }
 }

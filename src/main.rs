@@ -9,9 +9,7 @@ mod splash;
 mod ui;
 mod utils;
 
-const LOGICAL_WIDTH: f32 = 640.0;
-const LOGICAL_HEIGHT: f32 = 360.0;
-const SCALE: f32 = 2.0;
+use settings::*;
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
 enum GameState {
@@ -32,7 +30,7 @@ fn main() {
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
                     decorations: false,
-                    resolution: WindowResolution::new(LOGICAL_WIDTH * SCALE, LOGICAL_HEIGHT * SCALE)
+                    resolution: WindowResolution::new(LOGICAL_WIDTH as f32 * SCALE, LOGICAL_HEIGHT as f32 * SCALE)
                         .with_scale_factor_override(SCALE),
                     ..Default::default()
                 }),
