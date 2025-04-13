@@ -3,13 +3,15 @@ use super::GameState;
 use super::utils::*;
 use bevy::prelude::*;
 
-const ENEMY_SIZE: f32 = 30.0;
+// Shouldn't all sizes be whole number?
+const ENEMY_SIZE: f32 = 15.0;
 const ENEMY_HEALTH: f32 = 3.0;
 const ENEMY_SPAWN_RATE: f32 = 5.0;
-const ENEMY_SPEED: f32 = 200.0;
-const PROJECTILE_SPEED: f32 = 750.0;
+const ENEMY_SPEED: f32 = 100.0;
+const PROJECTILE_SIZE: f32 = 2.0;
+const PROJECTILE_SPEED: f32 = 400.0;
 const PROJECTILE_LIFETIME: f32 = 1.0;
-const PLAYER_SIZE: f32 = 50.0;
+const PLAYER_SIZE: f32 = 25.0;
 const PLAYER_SPEED: f32 = 250.0;
 const PLAYER_HEALTH: f32 = 5.0;
 const ATTACK_SPEED: f32 = 2.0;
@@ -148,7 +150,7 @@ fn spawn_enemy(time: Res<Time>, mut commands: Commands, mut enemy_spawn: ResMut<
             Health(ENEMY_HEALTH),
             Velocity(Vec3::ZERO),
             Sprite::from_color(Color::srgb(1.0, 0.0, 0.6), Vec2::from((ENEMY_SIZE, ENEMY_SIZE))),
-            Transform::from_translation(Vec3::from((300.0, 300.0, 0.5))),
+            Transform::from_translation(Vec3::from((320.0, 180.0, 0.5))),
             StateScoped(GameState::Game),
         ));
     }
@@ -310,7 +312,7 @@ fn attack(
     if *player_state == PlayerState::Attacking && attack_speed.0.finished() {
         commands.spawn((
             Projectile,
-            Sprite::from_color(Color::WHITE, Vec2::from((5.0, 5.0))),
+            Sprite::from_color(Color::WHITE, Vec2::from((PROJECTILE_SIZE, PROJECTILE_SIZE))),
             Transform::from_translation(player_position),
             Velocity(Vec3::lerp(
                 Vec3::ZERO,
