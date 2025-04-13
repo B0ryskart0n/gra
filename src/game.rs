@@ -22,7 +22,7 @@ const CURSOR_CAMERA_INFLUENCE: f32 = 0.3;
 
 pub fn game_plugin(app: &mut App) {
     app.add_state_scoped_event::<PlayerDeath>(GameState::Game)
-        .add_systems(OnEnter(GameState::Game), enter_game)
+        .add_systems(OnEnter(GameState::Game), on_game_enter)
         .add_systems(
             RunFixedMainLoop,
             handle_player_input
@@ -45,7 +45,7 @@ pub fn game_plugin(app: &mut App) {
             Update,
             (display_player_state, update_camera, check_game_exit).run_if(in_state(GameState::Game)),
         )
-        .add_systems(OnExit(GameState::Game), exit_game);
+        .add_systems(OnExit(GameState::Game), on_game_exit);
 }
 
 #[derive(Event, Default)]
@@ -107,7 +107,7 @@ fn lifetime(time: Res<Time>, mut commands: Commands, mut query: Query<(Entity, &
     })
 }
 
-fn enter_game(mut commands: Commands) {
+fn on_game_enter(mut commands: Commands) {
     commands.init_resource::<PlayerInput>();
     commands.init_resource::<DashTimer>();
     commands.init_resource::<AttackSpeed>();
@@ -136,7 +136,7 @@ fn check_game_exit(
         next_state.set(GameState::Menu);
     }
 }
-fn exit_game(mut commands: Commands) {
+fn on_game_exit(mut commands: Commands) {
     commands.remove_resource::<PlayerInput>();
     commands.remove_resource::<DashTimer>();
     commands.remove_resource::<AttackSpeed>();
