@@ -107,7 +107,7 @@ fn lifetime(time: Res<Time>, mut commands: Commands, mut query: Query<(Entity, &
     })
 }
 
-fn on_game_enter(mut commands: Commands) {
+fn on_game_enter(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.init_resource::<PlayerInput>();
     commands.init_resource::<DashTimer>();
     commands.init_resource::<AttackSpeed>();
@@ -124,6 +124,12 @@ fn on_game_enter(mut commands: Commands) {
         PlayerState::default(),
         Transform::from_translation(Vec3::from((0.0, 0.0, 1.0))),
         Velocity(Vec3::ZERO),
+        StateScoped(GameState::Game),
+    ));
+    commands.spawn((
+        Pickable,
+        Sprite::from_image(asset_server.load("banana.png")),
+        Transform::from_translation(Vec3::from((100.0, -100.0, 0.4))),
         StateScoped(GameState::Game),
     ));
 }
@@ -358,3 +364,6 @@ fn update_camera(
         .translation
         .smooth_nudge(&camera_goal, CAMERA_SPEED, time.delta_secs());
 }
+
+#[derive(Component)]
+struct Pickable;
