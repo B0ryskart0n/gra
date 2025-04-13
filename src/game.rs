@@ -12,13 +12,13 @@ const PROJECTILE_SIZE: f32 = 2.0;
 const PROJECTILE_SPEED: f32 = 400.0;
 const PROJECTILE_LIFETIME: f32 = 1.0;
 const PLAYER_SIZE: f32 = 25.0;
-const PLAYER_SPEED: f32 = 250.0;
+const PLAYER_SPEED: f32 = 120.0;
 const PLAYER_HEALTH: f32 = 5.0;
 const ATTACK_SPEED: f32 = 2.0;
 const DASH_LENGTH: f32 = 0.5;
 /// Actually, rate of exponential decay in the distance between camera and it's goal
-const CAMERA_SPEED: f32 = 6.0;
-const CURSOR_CAMERA_INFLUENCE: f32 = 0.4;
+const CAMERA_SPEED: f32 = 8.0;
+const CURSOR_CAMERA_INFLUENCE: f32 = 0.3;
 
 pub fn game_plugin(app: &mut App) {
     app.add_state_scoped_event::<PlayerDeath>(GameState::Game)
@@ -114,7 +114,7 @@ fn enter_game(mut commands: Commands) {
     commands.init_resource::<EnemySpawn>();
 
     commands.spawn((
-        Sprite::from_color(Color::BLACK, Vec2::from((1280.0, 720.0))),
+        Sprite::from_color(Color::BLACK, Vec2::from((640.0, 360.0))),
         StateScoped(GameState::Game),
     ));
     commands.spawn((
