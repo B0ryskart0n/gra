@@ -1,12 +1,16 @@
+mod components;
+mod resources;
+
 use super::CursorPosition;
 use super::GameState;
 use super::utils::*;
 use bevy::prelude::*;
+use components::*;
+use resources::*;
 
 // Shouldn't all sizes be whole number?
 const ENEMY_SIZE: f32 = 15.0;
 const ENEMY_HEALTH: f32 = 3.0;
-const ENEMY_SPAWN_RATE: f32 = 5.0;
 const ENEMY_SPEED: f32 = 100.0;
 const PROJECTILE_SIZE: f32 = 2.0;
 const PROJECTILE_SPEED: f32 = 400.0;
@@ -14,8 +18,6 @@ const PROJECTILE_LIFETIME: f32 = 1.0;
 const PLAYER_SIZE: f32 = 25.0;
 const PLAYER_SPEED: f32 = 120.0;
 const PLAYER_HEALTH: f32 = 5.0;
-const ATTACK_SPEED: f32 = 2.0;
-const DASH_LENGTH: f32 = 0.5;
 /// Actually, rate of exponential decay in the distance between camera and it's goal
 const CAMERA_SPEED: f32 = 8.0;
 const CURSOR_CAMERA_INFLUENCE: f32 = 0.3;
@@ -51,53 +53,6 @@ pub fn game_plugin(app: &mut App) {
 #[derive(Event, Default)]
 struct PlayerDeath;
 
-#[derive(Resource, Default)]
-struct PlayerInput {
-    direction: Vec3,
-    dash: bool,
-    attack: bool,
-}
-#[derive(Resource)]
-struct AttackSpeed(Timer);
-impl Default for AttackSpeed {
-    fn default() -> Self {
-        AttackSpeed(Timer::from_seconds(1.0 / ATTACK_SPEED, TimerMode::Once))
-    }
-}
-#[derive(Resource)]
-struct DashTimer(Timer);
-impl Default for DashTimer {
-    fn default() -> Self {
-        DashTimer(Timer::from_seconds(DASH_LENGTH, TimerMode::Once))
-    }
-}
-#[derive(Resource)]
-struct EnemySpawn(Timer);
-impl Default for EnemySpawn {
-    fn default() -> Self {
-        EnemySpawn(Timer::from_seconds(ENEMY_SPAWN_RATE, TimerMode::Repeating))
-    }
-}
-
-#[derive(Component)]
-struct Projectile;
-#[derive(Component)]
-struct Player;
-#[derive(PartialEq, Eq, Default, Component)]
-enum PlayerState {
-    #[default]
-    Idle,
-    Dashing,
-    Attacking,
-}
-#[derive(Component)]
-struct Enemy;
-#[derive(Component)]
-struct Health(f32);
-#[derive(Component)]
-struct Velocity(Vec3);
-#[derive(Component)]
-struct Lifetime(Timer);
 fn lifetime(time: Res<Time>, mut commands: Commands, mut query: Query<(Entity, &mut Lifetime)>) {
     let dt = time.delta();
     query.iter_mut().for_each(|(e, mut l)| {
@@ -364,6 +319,3 @@ fn update_camera(
         .translation
         .smooth_nudge(&camera_goal, CAMERA_SPEED, time.delta_secs());
 }
-
-#[derive(Component)]
-struct Pickable;
