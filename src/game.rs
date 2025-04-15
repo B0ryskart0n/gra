@@ -1,11 +1,13 @@
 mod components;
+mod events;
 mod resources;
 
-use super::CursorPosition;
-use super::GameState;
-use super::utils::*;
+use crate::CursorPosition;
+use crate::GameState;
+use crate::utils::*;
 use bevy::prelude::*;
 use components::*;
+use events::*;
 use resources::*;
 
 // Shouldn't all sizes be whole number?
@@ -24,6 +26,7 @@ const CURSOR_CAMERA_INFLUENCE: f32 = 0.3;
 
 pub fn game_plugin(app: &mut App) {
     app.add_state_scoped_event::<PlayerDeath>(GameState::Game)
+        .add_state_scoped_event::<ItemPickup>(GameState::Game)
         .add_systems(OnEnter(GameState::Game), on_game_enter)
         .add_systems(
             RunFixedMainLoop,
@@ -45,13 +48,17 @@ pub fn game_plugin(app: &mut App) {
         )
         .add_systems(
             Update,
-            (display_player_state, update_camera, check_game_exit).run_if(in_state(GameState::Game)),
+            (
+                display_player_state,
+                update_camera,
+                check_game_exit,
+                handle_pickup_event,
+                pickup_items,
+            )
+                .run_if(in_state(GameState::Game)),
         )
         .add_systems(OnExit(GameState::Game), on_game_exit);
 }
-
-#[derive(Event, Default)]
-struct PlayerDeath;
 
 fn lifetime(time: Res<Time>, mut commands: Commands, mut query: Query<(Entity, &mut Lifetime)>) {
     let dt = time.delta();
@@ -67,6 +74,7 @@ fn on_game_enter(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.init_resource::<DashTimer>();
     commands.init_resource::<AttackSpeed>();
     commands.init_resource::<EnemySpawn>();
+    commands.init_resource::<PlayerEquipment>();
 
     commands.spawn((
         Sprite::from_color(Color::BLACK, Vec2::from((640.0, 360.0))),
@@ -82,7 +90,7 @@ fn on_game_enter(mut commands: Commands, asset_server: Res<AssetServer>) {
         StateScoped(GameState::Game),
     ));
     commands.spawn((
-        Pickable,
+        Item::Banana,
         Sprite::from_image(asset_server.load("banana.png")),
         Transform::from_translation(Vec3::from((100.0, -100.0, 0.4))),
         StateScoped(GameState::Game),
@@ -102,6 +110,7 @@ fn on_game_exit(mut commands: Commands) {
     commands.remove_resource::<DashTimer>();
     commands.remove_resource::<AttackSpeed>();
     commands.remove_resource::<EnemySpawn>();
+    commands.remove_resource::<PlayerEquipment>();
 }
 
 fn spawn_enemy(time: Res<Time>, mut commands: Commands, mut enemy_spawn: ResMut<EnemySpawn>) {
@@ -185,6 +194,28 @@ fn player_hit(
     player_health.0 -= damage;
     if player_health.0 <= 0.0 {
         death_events.send_default();
+    }
+}
+
+fn handle_pickup_event(mut pickup_events: EventReader<ItemPickup>) {
+    pickup_events.read().for_each(|_| info!("Picked-up an item."));
+}
+
+fn pickup_items(
+    mut commands: Commands,
+    q_player: Query<&GlobalTransform, With<Player>>,
+    q_items: Query<(Entity, &Item, &GlobalTransform), Without<Player>>,
+    mut equipment: ResMut<PlayerEquipment>,
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut pickup_events: EventWriter<ItemPickup>,
+) {
+    let _player_pos = q_player.single().translation();
+    if keyboard.just_pressed(KeyCode::KeyE) {
+        q_items.iter().for_each(|(e, item, _pos)| {
+            equipment.pickup(item.clone());
+            pickup_events.send_default();
+            commands.entity(e).despawn_recursive();
+        });
     }
 }
 

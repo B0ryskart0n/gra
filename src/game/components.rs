@@ -26,5 +26,11 @@ pub struct Velocity(pub Vec3);
 #[derive(Component)]
 pub struct Lifetime(pub Timer);
 
-#[derive(Component)]
+#[derive(Component, PartialEq, Eq, Hash, Clone)]
+#[require(Pickable)]
+pub enum Item {
+    Banana,
+}
+
+#[derive(Component, Default)]
 pub struct Pickable;

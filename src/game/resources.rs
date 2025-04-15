@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use super::components::*;
 use bevy::prelude::*;
 
 const ATTACK_SPEED: f32 = 2.0;
@@ -35,18 +36,9 @@ impl Default for EnemySpawn {
 }
 
 #[derive(Resource, Default)]
-pub struct PlayerEquipment(HashMap<ItemType, u8>);
+pub struct PlayerEquipment(HashMap<Item, u8>);
 impl PlayerEquipment {
-    fn pickup(&mut self, item: ItemType, mut pickup_events: EventWriter<ItemPickup>) {
+    pub fn pickup(&mut self, item: Item) {
         self.0.entry(item).and_modify(|count| *count += 1).or_insert(1);
-        pickup_events.send_default();
     }
-}
-
-#[derive(Event, Default)]
-struct ItemPickup;
-
-#[derive(PartialEq, Eq, Hash)]
-enum ItemType {
-    Banana,
 }
