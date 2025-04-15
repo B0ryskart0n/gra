@@ -1,7 +1,7 @@
 mod components;
 mod events;
+mod hud;
 mod resources;
-mod ui;
 
 use bevy::prelude::*;
 use std::cmp::Ordering;
@@ -12,7 +12,6 @@ use crate::utils::*;
 use components::*;
 use events::*;
 use resources::*;
-use ui::*;
 
 // Shouldn't all sizes be whole number?
 const INTERACTION_DISTANCE: f32 = 30.0;
@@ -32,7 +31,7 @@ const CURSOR_CAMERA_INFLUENCE: f32 = 0.3;
 pub fn game_plugin(app: &mut App) {
     app.add_state_scoped_event::<PlayerDeath>(GameState::Game)
         .add_state_scoped_event::<ItemPickup>(GameState::Game)
-        .add_systems(OnEnter(GameState::Game), (on_game_enter, setup_ui))
+        .add_systems(OnEnter(GameState::Game), (on_game_enter, hud::spawn))
         .add_systems(
             RunFixedMainLoop,
             handle_player_input
@@ -59,6 +58,7 @@ pub fn game_plugin(app: &mut App) {
                 check_game_exit,
                 handle_pickup_event,
                 pickup_items,
+                hud::update_health,
             )
                 .run_if(in_state(GameState::Game)),
         )

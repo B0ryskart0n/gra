@@ -34,3 +34,6 @@ pub enum Item {
 
 #[derive(Component, Default)]
 pub struct Pickable;
+
+#[derive(Component)]
+pub struct HealthHud;

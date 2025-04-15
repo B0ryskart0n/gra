@@ -46,7 +46,7 @@ fn main() {
         .add_plugins(menu::menu_plugin)
         .add_plugins(settings::plugin)
         .add_plugins(game::game_plugin)
-        .add_plugins(bevy::dev_tools::fps_overlay::FpsOverlayPlugin::default())
+        // .add_plugins(bevy::dev_tools::fps_overlay::FpsOverlayPlugin::default())
         .run();
 }
 
