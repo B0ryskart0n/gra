@@ -9,8 +9,10 @@ use bevy::prelude::*;
 use components::*;
 use events::*;
 use resources::*;
+use std::cmp::Ordering;
 
 // Shouldn't all sizes be whole number?
+const INTERACTION_DISTANCE: f32 = 30.0;
 const ENEMY_SIZE: f32 = 15.0;
 const ENEMY_HEALTH: f32 = 3.0;
 const ENEMY_SPEED: f32 = 100.0;
@@ -209,13 +211,19 @@ fn pickup_items(
     keyboard: Res<ButtonInput<KeyCode>>,
     mut pickup_events: EventWriter<ItemPickup>,
 ) {
-    let _player_pos = q_player.single().translation();
+    let player_pos = q_player.single().translation();
     if keyboard.just_pressed(KeyCode::KeyE) {
-        q_items.iter().for_each(|(e, item, _pos)| {
-            equipment.pickup(item.clone());
-            pickup_events.send_default();
-            commands.entity(e).despawn_recursive();
-        });
+        // Finds the closest item within the `INTERACTION_DISTANCE` and picks it up.
+        q_items
+            .iter()
+            .map(|(e, item, pos)| (e, item, player_pos.distance(pos.translation())))
+            .filter(|(_, _, distance)| *distance < INTERACTION_DISTANCE)
+            .min_by(|(_, _, x), (_, _, y)| x.partial_cmp(y).unwrap_or(Ordering::Equal))
+            .map(|(entity, item, _)| {
+                equipment.pickup(item.clone());
+                commands.entity(entity).despawn_recursive();
+                pickup_events.send_default();
+            });
     }
 }
 
