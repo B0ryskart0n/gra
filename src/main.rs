@@ -6,7 +6,6 @@ mod game;
 mod menu;
 mod settings;
 mod splash;
-mod ui;
 mod utils;
 
 use settings::*;

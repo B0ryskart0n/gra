@@ -1,5 +1,5 @@
 use super::GameState;
-use crate::ui::*;
+use crate::utils::ui::*;
 use bevy::prelude::*;
 
 pub fn menu_plugin(app: &mut App) {

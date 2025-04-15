@@ -1,15 +1,18 @@
 mod components;
 mod events;
 mod resources;
+mod ui;
+
+use bevy::prelude::*;
+use std::cmp::Ordering;
 
 use crate::CursorPosition;
 use crate::GameState;
 use crate::utils::*;
-use bevy::prelude::*;
 use components::*;
 use events::*;
 use resources::*;
-use std::cmp::Ordering;
+use ui::*;
 
 // Shouldn't all sizes be whole number?
 const INTERACTION_DISTANCE: f32 = 30.0;
@@ -29,7 +32,7 @@ const CURSOR_CAMERA_INFLUENCE: f32 = 0.3;
 pub fn game_plugin(app: &mut App) {
     app.add_state_scoped_event::<PlayerDeath>(GameState::Game)
         .add_state_scoped_event::<ItemPickup>(GameState::Game)
-        .add_systems(OnEnter(GameState::Game), on_game_enter)
+        .add_systems(OnEnter(GameState::Game), (on_game_enter, setup_ui))
         .add_systems(
             RunFixedMainLoop,
             handle_player_input
