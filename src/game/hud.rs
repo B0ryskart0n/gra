@@ -43,5 +43,6 @@ pub fn spawn(mut commands: Commands) {
 }
 
 pub fn update_health(mut q_health_hud: Query<&mut Text, With<HealthHud>>, q_health: Query<&Health, With<Player>>) {
+    // TODO Doesn't this heap allocate new string with each Update?
     q_health_hud.single_mut().0 = q_health.single().0.to_string();
 }
