@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use super::components::*;
 use crate::GameState;
 
-pub fn spawn(mut commands: Commands) {
+pub fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
         .spawn((
             Node {
@@ -18,27 +18,29 @@ pub fn spawn(mut commands: Commands) {
             StateScoped(GameState::Game),
         ))
         .with_children(|parent| {
-            parent.spawn((
-                Node {
+            parent
+                .spawn(Node {
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(10.0),
+                    flex_direction: FlexDirection::Row,
+                    justify_content: JustifyContent::FlexStart,
+                    ..Default::default()
+                })
+                .with_children(|parent| {
+                    parent.spawn(Text::new("Upper HUD"));
+                    parent.spawn(ImageNode::new(asset_server.load("banana.png")));
+                });
+            parent
+                .spawn(Node {
                     width: Val::Percent(100.0),
                     height: Val::Percent(10.0),
                     flex_direction: FlexDirection::Column,
                     justify_content: JustifyContent::FlexStart,
                     ..Default::default()
-                },
-                Text::new("Upper HUD"),
-            ));
-            parent.spawn((
-                Node {
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(10.0),
-                    flex_direction: FlexDirection::Column,
-                    justify_content: JustifyContent::FlexStart,
-                    ..Default::default()
-                },
-                Text::default(),
-                HealthHud,
-            ));
+                })
+                .with_children(|parent| {
+                    parent.spawn((Text::default(), HealthHud));
+                });
         });
 }
 
