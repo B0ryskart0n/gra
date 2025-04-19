@@ -41,4 +41,9 @@ impl PlayerEquipment {
     pub fn pickup(&mut self, item: Item) {
         self.0.entry(item).and_modify(|count| *count += 1).or_insert(1);
     }
+    pub fn hud_nodes(&self, asset_server: Res<AssetServer>, parent: &mut ChildBuilder) {
+        self.0.iter().filter(|(_, val)| **val != 0u8).for_each(|(key, _)| {
+            parent.spawn(ImageNode::new(key.image(&asset_server)));
+        });
+    }
 }

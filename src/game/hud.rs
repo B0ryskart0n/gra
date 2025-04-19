@@ -1,9 +1,10 @@
 use bevy::prelude::*;
 
 use super::components::*;
+use super::resources::*;
 use crate::GameState;
 
-pub fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn spawn(mut commands: Commands) {
     commands
         .spawn((
             Node {
@@ -18,18 +19,16 @@ pub fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
             StateScoped(GameState::Game),
         ))
         .with_children(|parent| {
-            parent
-                .spawn(Node {
+            parent.spawn((
+                Node {
                     width: Val::Percent(100.0),
                     height: Val::Percent(10.0),
                     flex_direction: FlexDirection::Row,
                     justify_content: JustifyContent::FlexStart,
                     ..Default::default()
-                })
-                .with_children(|parent| {
-                    parent.spawn(Text::new("Upper HUD"));
-                    parent.spawn(ImageNode::new(asset_server.load("banana.png")));
-                });
+                },
+                EquipmentNode,
+            ));
             parent
                 .spawn(Node {
                     width: Val::Percent(100.0),
@@ -47,4 +46,17 @@ pub fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
 pub fn update_health(mut q_health_hud: Query<&mut Text, With<HealthHud>>, q_health: Query<&Health, With<Player>>) {
     // TODO Doesn't this heap allocate new string with each Update?
     q_health_hud.single_mut().0 = q_health.single().0.to_string();
+}
+
+// TODO Optimise this to not re-spawn items
+pub fn update_equipment(
+    mut commands: Commands,
+    q_eq_node: Query<Entity, With<EquipmentNode>>,
+    asset_server: Res<AssetServer>,
+    equipment: Res<PlayerEquipment>,
+) {
+    commands
+        .entity(q_eq_node.single())
+        .clear_children()
+        .with_children(|parent| equipment.hud_nodes(asset_server, parent));
 }

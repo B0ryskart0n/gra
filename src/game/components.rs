@@ -31,9 +31,19 @@ pub struct Lifetime(pub Timer);
 pub enum Item {
     Banana,
 }
+impl Item {
+    pub fn image(&self, asset_server: &Res<AssetServer>) -> Handle<Image> {
+        match self {
+            Self::Banana => asset_server.load("banana.png"),
+        }
+    }
+}
 
 #[derive(Component, Default)]
 pub struct Pickable;
 
 #[derive(Component)]
 pub struct HealthHud;
+
+#[derive(Component)]
+pub struct EquipmentNode;

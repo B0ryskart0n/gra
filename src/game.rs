@@ -59,6 +59,7 @@ pub fn game_plugin(app: &mut App) {
                 handle_pickup_event,
                 pickup_items,
                 hud::update_health,
+                hud::update_equipment,
             )
                 .run_if(in_state(GameState::Game)),
         )
