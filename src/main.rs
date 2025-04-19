@@ -26,15 +26,17 @@ struct CursorPosition(Option<Vec2>);
 fn main() {
     App::new()
         .add_plugins(
-            DefaultPlugins.set(WindowPlugin {
-                primary_window: Some(Window {
-                    decorations: false,
-                    resolution: WindowResolution::new(LOGICAL_WIDTH as f32 * SCALE, LOGICAL_HEIGHT as f32 * SCALE)
-                        .with_scale_factor_override(SCALE),
+            DefaultPlugins
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        decorations: false,
+                        resolution: WindowResolution::new(LOGICAL_WIDTH as f32 * SCALE, LOGICAL_HEIGHT as f32 * SCALE)
+                            .with_scale_factor_override(SCALE),
+                        ..Default::default()
+                    }),
                     ..Default::default()
-                }),
-                ..Default::default()
-            }),
+                })
+                .set(ImagePlugin::default_nearest()),
         )
         // Needs to be done after DefaultPlugins, because DefaultPlugins initializes StateTransitions
         .init_state::<GameState>() // Initial state will be the #[default]
