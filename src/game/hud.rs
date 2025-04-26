@@ -45,11 +45,10 @@ pub fn spawn(mut commands: Commands) {
 
 pub fn update_health(
     mut q_health_hud: Query<&mut Text, With<HealthHud>>,
-    q_health: Query<&Health, With<Player>>,
+    q_player: Query<(&Health, &Stats), With<Player>>,
 ) -> Result {
-    for health in q_health {
-        q_health_hud.single_mut()?.0 = health.0.to_string();
-    }
+    let (health, stats) = q_player.single()?;
+    q_health_hud.single_mut()?.0 = format!("{}/{}", health.0, stats.max_health);
     Ok(())
 }
 

@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use super::components::*;
 use bevy::prelude::*;
 
-const ATTACK_SPEED: f32 = 2.0;
 const DASH_TIME: f32 = 0.5;
 const ENEMY_SPAWN_INTERVAL: f32 = 5.0;
 
@@ -13,11 +12,12 @@ pub struct PlayerInput {
     pub dash: bool,
     pub attack: bool,
 }
+/// Timer of 1 second, scaled by the `Stats` `attack_speed`
 #[derive(Resource)]
-pub struct AttackSpeed(pub Timer);
-impl Default for AttackSpeed {
+pub struct AttackTimer(pub Timer);
+impl Default for AttackTimer {
     fn default() -> Self {
-        AttackSpeed(Timer::from_seconds(1.0 / ATTACK_SPEED, TimerMode::Once))
+        AttackTimer(Timer::from_seconds(1.0, TimerMode::Once))
     }
 }
 #[derive(Resource)]
@@ -45,5 +45,8 @@ impl PlayerEquipment {
         self.0.iter().filter(|(_, val)| **val != 0u8).for_each(|(key, _)| {
             spawner.spawn(ImageNode::new(key.image(&asset_server)));
         });
+    }
+    pub fn item_stat(&self, item: &Item) -> f32 {
+        *self.0.get(item).unwrap_or(&0u8) as f32 * Item::stat(item)
     }
 }

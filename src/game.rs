@@ -5,6 +5,7 @@ mod resources;
 
 use bevy::prelude::*;
 use std::cmp::Ordering;
+use std::time::Duration;
 
 use crate::CursorPosition;
 use crate::GameState;
@@ -22,8 +23,6 @@ const PROJECTILE_SIZE: f32 = 2.0;
 const PROJECTILE_SPEED: f32 = 400.0;
 const PROJECTILE_LIFETIME: f32 = 1.0;
 const PLAYER_SIZE: f32 = 25.0;
-const PLAYER_SPEED: f32 = 120.0;
-const PLAYER_HEALTH: f32 = 5.0;
 /// Rate of exponential decay in the distance between camera and it's goal.
 const CAMERA_SPEED: f32 = 8.0;
 const CURSOR_CAMERA_INFLUENCE: f32 = 0.3;
@@ -33,7 +32,7 @@ pub fn game_plugin(app: &mut App) {
     // those resources at the top level instead of `OnEnter(GameState::Game)`.
     app.init_resource::<PlayerInput>()
         .init_resource::<DashTimer>()
-        .init_resource::<AttackSpeed>()
+        .init_resource::<AttackTimer>()
         .init_resource::<EnemySpawn>()
         .init_resource::<PlayerEquipment>()
         .add_state_scoped_event::<PlayerDeath>(GameState::Game)
@@ -63,7 +62,7 @@ pub fn game_plugin(app: &mut App) {
                 display_player_state,
                 update_camera,
                 check_game_exit,
-                handle_pickup_event,
+                update_stats.run_if(on_event::<ItemPickup>),
                 pickup_items,
                 hud::update_health,
                 hud::update_equipment.run_if(resource_changed::<PlayerEquipment>),
@@ -90,6 +89,7 @@ fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         Player,
         Health(PLAYER_HEALTH),
+        Stats::default(),
         Sprite::from_color(Color::WHITE, Vec2::from((PLAYER_SIZE, PLAYER_SIZE))),
         PlayerState::default(),
         Transform::from_translation(Vec3::from((0.0, 0.0, 1.0))),
@@ -103,6 +103,7 @@ fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
         StateScoped(GameState::Game),
     ));
 }
+
 fn check_game_exit(
     keyboard: Res<ButtonInput<KeyCode>>,
     mut next_state: ResMut<NextState<GameState>>,
@@ -113,7 +114,7 @@ fn check_game_exit(
     }
 }
 
-fn spawn_enemy(time: Res<Time>, mut commands: Commands, mut enemy_spawn: ResMut<EnemySpawn>) {
+fn spawn_enemy(time: Res<Time<Fixed>>, mut commands: Commands, mut enemy_spawn: ResMut<EnemySpawn>) {
     if enemy_spawn.0.tick(time.delta()).finished() {
         commands.spawn((
             Enemy,
@@ -201,8 +202,9 @@ fn player_hit(
     Ok(())
 }
 
-fn handle_pickup_event(mut pickup_events: EventReader<ItemPickup>) {
-    pickup_events.read().for_each(|_| info!("Picked-up an item."));
+fn update_stats(mut q_stats: Query<&mut Stats>, eq: Res<PlayerEquipment>) -> Result {
+    q_stats.single_mut()?.apply_equipment(&eq);
+    Ok(())
 }
 
 fn pickup_items(
@@ -266,11 +268,11 @@ fn handle_player_input(
 
 fn player_state(
     time_fixed: Res<Time<Fixed>>,
-    mut query: Query<(&mut PlayerState, &mut Velocity), With<Player>>,
+    mut query: Query<(&mut PlayerState, &mut Velocity, &Stats), With<Player>>,
     input: Res<PlayerInput>,
     mut dash_timer: ResMut<DashTimer>,
 ) -> Result {
-    let (mut state, mut velocity) = query.single_mut()?;
+    let (mut state, mut velocity, stats) = query.single_mut()?;
 
     let dt = time_fixed.delta();
 
@@ -292,7 +294,7 @@ fn player_state(
         PlayerState::Attacking => 0.5,
     };
 
-    velocity.0 = input.direction * speed_mult * PLAYER_SPEED;
+    velocity.0 = input.direction * speed_mult * stats.movement_speed;
 
     Ok(())
 }
@@ -306,16 +308,17 @@ fn physics(time_fixed: Res<Time<Fixed>>, mut query: Query<(&mut Transform, &Velo
 fn attack(
     time_fixed: Res<Time<Fixed>>,
     mut commands: Commands,
-    query: Query<(&GlobalTransform, &PlayerState), With<Player>>,
+    query: Query<(&GlobalTransform, &PlayerState, &Stats), With<Player>>,
     cursor_position: Res<CursorPosition>,
-    mut attack_speed: ResMut<AttackSpeed>,
+    mut attack_timer: ResMut<AttackTimer>,
 ) -> Result {
-    let (player_transform, player_state) = query.single()?;
+    let (player_transform, player_state, stats) = query.single()?;
     let player_position = player_transform.translation();
+    let dt = time_fixed.delta_secs();
 
-    attack_speed.0.tick(time_fixed.delta());
+    attack_timer.0.tick(Duration::from_secs_f32(dt * stats.attack_speed));
 
-    if *player_state == PlayerState::Attacking && attack_speed.0.finished() {
+    if *player_state == PlayerState::Attacking && attack_timer.0.finished() {
         commands.spawn((
             Projectile,
             Sprite::from_color(Color::WHITE, Vec2::from((PROJECTILE_SIZE, PROJECTILE_SIZE))),
@@ -328,7 +331,7 @@ fn attack(
             StateScoped(GameState::Game),
             Lifetime(Timer::from_seconds(PROJECTILE_LIFETIME, TimerMode::Once)),
         ));
-        attack_speed.0.reset();
+        attack_timer.0.reset();
     }
 
     Ok(())
