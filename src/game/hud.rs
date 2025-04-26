@@ -47,12 +47,13 @@ pub fn update_health(
     mut q_health_hud: Query<&mut Text, With<HealthHud>>,
     q_health: Query<&Health, With<Player>>,
 ) -> Result {
-    // TODO Doesn't this heap allocate new string with each Update?
-    q_health_hud.single_mut()?.0 = q_health.single()?.0.to_string();
+    for health in q_health {
+        q_health_hud.single_mut()?.0 = health.0.to_string();
+    }
     Ok(())
 }
 
-// TODO Optimise this to not re-spawn items
+/// Should only be run if `PlayerEquipment` changes, since it modifies components
 pub fn update_equipment(
     mut commands: Commands,
     q_eq_node: Query<Entity, With<EquipmentNode>>,

@@ -13,7 +13,7 @@ use components::*;
 use events::*;
 use resources::*;
 
-// Shouldn't all sizes be whole number?
+// TODO Shouldn't all sizes be whole number?
 const INTERACTION_DISTANCE: f32 = 30.0;
 const ENEMY_SIZE: f32 = 15.0;
 const ENEMY_HEALTH: f32 = 3.0;
@@ -24,14 +24,21 @@ const PROJECTILE_LIFETIME: f32 = 1.0;
 const PLAYER_SIZE: f32 = 25.0;
 const PLAYER_SPEED: f32 = 120.0;
 const PLAYER_HEALTH: f32 = 5.0;
-/// Actually, rate of exponential decay in the distance between camera and it's goal
+/// Rate of exponential decay in the distance between camera and it's goal.
 const CAMERA_SPEED: f32 = 8.0;
 const CURSOR_CAMERA_INFLUENCE: f32 = 0.3;
 
 pub fn game_plugin(app: &mut App) {
-    app.add_state_scoped_event::<PlayerDeath>(GameState::Game)
+    // Since I want to rely on `resource_changed` condition I need to initiate
+    // those resources at the top level instead of `OnEnter(GameState::Game)`.
+    app.init_resource::<PlayerInput>()
+        .init_resource::<DashTimer>()
+        .init_resource::<AttackSpeed>()
+        .init_resource::<EnemySpawn>()
+        .init_resource::<PlayerEquipment>()
+        .add_state_scoped_event::<PlayerDeath>(GameState::Game)
         .add_state_scoped_event::<ItemPickup>(GameState::Game)
-        .add_systems(OnEnter(GameState::Game), (on_game_enter, hud::spawn))
+        .add_systems(OnEnter(GameState::Game), (spawn, hud::spawn))
         .add_systems(
             RunFixedMainLoop,
             handle_player_input
@@ -59,11 +66,11 @@ pub fn game_plugin(app: &mut App) {
                 handle_pickup_event,
                 pickup_items,
                 hud::update_health,
-                hud::update_equipment,
+                hud::update_equipment.run_if(resource_changed::<PlayerEquipment>),
             )
                 .run_if(in_state(GameState::Game)),
-        )
-        .add_systems(OnExit(GameState::Game), on_game_exit);
+        );
+    // .add_systems(OnExit(GameState::Game), on_game_exit);
 }
 
 fn lifetime(time: Res<Time>, mut commands: Commands, mut query: Query<(Entity, &mut Lifetime)>) {
@@ -75,13 +82,7 @@ fn lifetime(time: Res<Time>, mut commands: Commands, mut query: Query<(Entity, &
     })
 }
 
-fn on_game_enter(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.init_resource::<PlayerInput>();
-    commands.init_resource::<DashTimer>();
-    commands.init_resource::<AttackSpeed>();
-    commands.init_resource::<EnemySpawn>();
-    commands.init_resource::<PlayerEquipment>();
-
+fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         Sprite::from_color(Color::BLACK, Vec2::from((640.0, 360.0))),
         StateScoped(GameState::Game),
@@ -110,13 +111,6 @@ fn check_game_exit(
     if keyboard.just_pressed(KeyCode::Escape) || !death_events.is_empty() {
         next_state.set(GameState::Menu);
     }
-}
-fn on_game_exit(mut commands: Commands) {
-    commands.remove_resource::<PlayerInput>();
-    commands.remove_resource::<DashTimer>();
-    commands.remove_resource::<AttackSpeed>();
-    commands.remove_resource::<EnemySpawn>();
-    commands.remove_resource::<PlayerEquipment>();
 }
 
 fn spawn_enemy(time: Res<Time>, mut commands: Commands, mut enemy_spawn: ResMut<EnemySpawn>) {
@@ -165,7 +159,7 @@ fn hit_player_enemy(player_pos: Vec3, enemy_pos: Vec3) -> bool {
         && player_pos.y + PLAYER_SIZE / 2.0 > enemy_pos.y - ENEMY_SIZE / 2.0;
 }
 
-// TODO Maybe solve collisions with events
+// TODO Solve collisions with events / observers
 
 fn enemy_hit(
     mut commands: Commands,
@@ -195,8 +189,8 @@ fn player_hit(
         _ => q_enemies
             .iter()
             .map(|enemy_transform| hit_player_enemy(player_transform.translation(), enemy_transform.translation()))
-            .map(|b| b as i32 as f32)
-            .sum(),
+            .filter(|hit| *hit)
+            .count() as f32,
     };
 
     player_health.0 -= damage;
