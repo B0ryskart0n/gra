@@ -10,19 +10,6 @@ mod utils;
 
 use settings::*;
 
-#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
-enum GameState {
-    #[default]
-    Splash,
-    Menu,
-    Settings,
-    Game,
-}
-
-/// Cursor world position.
-#[derive(Resource, Default)]
-struct CursorPosition(Option<Vec2>);
-
 fn main() {
     App::new()
         .add_plugins(
@@ -73,3 +60,16 @@ fn spawn_camera(mut commands: Commands) {
 
 #[derive(Component)]
 struct PrimaryCamera;
+
+#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
+enum GameState {
+    #[default]
+    Splash,
+    Menu,
+    Settings,
+    Game,
+}
+
+/// Cursor world position.
+#[derive(Resource, Default)]
+struct CursorPosition(Option<Vec2>);
