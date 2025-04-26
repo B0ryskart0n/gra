@@ -29,7 +29,7 @@ pub const DIRECTION_DOWNRIGHT: Vec3 = Vec3 {
 // Generic system that takes a component as a parameter, and will despawn all entities with that component
 pub fn _despawn<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
     for entity in &to_despawn {
-        commands.entity(entity).despawn_recursive();
+        commands.entity(entity).despawn();
     }
 }
 
@@ -39,8 +39,9 @@ pub mod ui {
     use bevy::ui::BackgroundColor;
 
     // TODO Instead of taking a closure it migt be good to give it an EventWriter and handle that elsewhere.
-    /// Takes the Result of `.get_single_mut` called on a query for Button that should be updated
-    /// based on the interaction and the closure to call is it is pressed.
+    /// Takes the Result of `.single_mut` called on a query for Button that should be updated
+    /// based on the interaction, and the closure to call is it is pressed.
+    /// Only works with `Result::Ok` variant, assuming the error means empty query caused by no `Changed<Interaction>`
     pub fn button_interaction(
         button_query_result: Result<(&Interaction, Mut<BackgroundColor>), QuerySingleError>,
         pressed: impl FnOnce(),

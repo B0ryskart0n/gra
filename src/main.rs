@@ -56,14 +56,15 @@ fn update_cursor_position(
     mut cursor_position: ResMut<CursorPosition>,
     q_window: Query<&Window>,
     q_camera: Query<(&Camera, &GlobalTransform), With<PrimaryCamera>>,
-) {
-    let (camera, camera_transform) = q_camera.single();
-    let window = q_window.single();
+) -> Result {
+    let (camera, camera_transform) = q_camera.single()?;
+    let window = q_window.single()?;
 
     cursor_position.0 = window
         .cursor_position()
         .map(|viewport_position| camera.viewport_to_world_2d(camera_transform, viewport_position))
         .and_then(|res| res.ok());
+    Ok(())
 }
 
 fn spawn_camera(mut commands: Commands) {

@@ -80,11 +80,19 @@ fn setup_ui(mut commands: Commands) {
                 });
         });
 }
-fn update_text_mode(mut q_window_mode: Query<&mut Text, With<WindowModeText>>, user_settings: Res<UserSettings>) {
-    q_window_mode.single_mut().0 = user_settings.window.mode_str();
+fn update_text_mode(
+    mut q_window_mode: Query<&mut Text, With<WindowModeText>>,
+    user_settings: Res<UserSettings>,
+) -> Result {
+    q_window_mode.single_mut()?.0 = user_settings.window.mode_str();
+    Ok(())
 }
-fn update_text_res(mut q_resolution: Query<&mut Text, With<ResolutionText>>, user_settings: Res<UserSettings>) {
-    q_resolution.single_mut().0 = user_settings.window.res_str();
+fn update_text_res(
+    mut q_resolution: Query<&mut Text, With<ResolutionText>>,
+    user_settings: Res<UserSettings>,
+) -> Result {
+    q_resolution.single_mut()?.0 = user_settings.window.res_str();
+    Ok(())
 }
 fn handle_keyboard(keyboard: Res<ButtonInput<KeyCode>>, mut next_state: ResMut<NextState<GameState>>) {
     if keyboard.just_pressed(KeyCode::Escape) {
@@ -95,31 +103,33 @@ fn handle_menu_button(
     mut q_button: Query<(&Interaction, &mut BackgroundColor), (With<MenuButton>, Changed<Interaction>)>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
-    button_interaction(q_button.get_single_mut(), || next_state.set(GameState::Menu));
+    button_interaction(q_button.single_mut(), || next_state.set(GameState::Menu));
 }
 fn handle_apply_button(
     mut q_button: Query<(&Interaction, &mut BackgroundColor), (With<ApplyButton>, Changed<Interaction>)>,
     mut q_window: Query<&mut Window>,
     user_settings: Res<UserSettings>,
-) {
-    button_interaction(q_button.get_single_mut(), || {
-        let mut window = q_window.single_mut();
+) -> Result {
+    let mut window = q_window.single_mut()?;
+    button_interaction(q_button.single_mut(), || {
         // Setting the mode before the resolution seems to work better.
         window.mode = user_settings.window.to_bevy_mode();
         window.resolution = user_settings.window.to_bevy_res();
     });
+
+    Ok(())
 }
 fn handle_resolution_button(
     mut q_button: Query<(&Interaction, &mut BackgroundColor), (With<ResolutionButton>, Changed<Interaction>)>,
     mut user_settings: ResMut<UserSettings>,
 ) {
-    button_interaction(q_button.get_single_mut(), || user_settings.window.cycle_res());
+    button_interaction(q_button.single_mut(), || user_settings.window.cycle_res());
 }
 fn handle_window_mode_button(
     mut q_button: Query<(&Interaction, &mut BackgroundColor), (With<WindowModeButton>, Changed<Interaction>)>,
     mut user_settings: ResMut<UserSettings>,
 ) {
-    button_interaction(q_button.get_single_mut(), || user_settings.window.cycle_mode());
+    button_interaction(q_button.single_mut(), || user_settings.window.cycle_mode());
 }
 
 // TODO Add loading last settings and falling back to creating defaults from system settings.
@@ -145,7 +155,7 @@ impl WindowSettings {
         match self {
             Self::Windowed(_) => WindowMode::Windowed,
             Self::Borderless => WindowMode::BorderlessFullscreen(MonitorSelection::Current),
-            Self::Fullscreen => WindowMode::Fullscreen(MonitorSelection::Current),
+            Self::Fullscreen => WindowMode::Fullscreen(MonitorSelection::Current, VideoModeSelection::Current),
         }
     }
     fn to_bevy_res(&self) -> WindowResolution {

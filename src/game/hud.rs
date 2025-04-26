@@ -43,9 +43,13 @@ pub fn spawn(mut commands: Commands) {
         });
 }
 
-pub fn update_health(mut q_health_hud: Query<&mut Text, With<HealthHud>>, q_health: Query<&Health, With<Player>>) {
+pub fn update_health(
+    mut q_health_hud: Query<&mut Text, With<HealthHud>>,
+    q_health: Query<&Health, With<Player>>,
+) -> Result {
     // TODO Doesn't this heap allocate new string with each Update?
-    q_health_hud.single_mut().0 = q_health.single().0.to_string();
+    q_health_hud.single_mut()?.0 = q_health.single()?.0.to_string();
+    Ok(())
 }
 
 // TODO Optimise this to not re-spawn items
@@ -54,9 +58,10 @@ pub fn update_equipment(
     q_eq_node: Query<Entity, With<EquipmentNode>>,
     asset_server: Res<AssetServer>,
     equipment: Res<PlayerEquipment>,
-) {
+) -> Result {
     commands
-        .entity(q_eq_node.single())
-        .clear_children()
+        .entity(q_eq_node.single()?)
+        .despawn_related::<Children>()
         .with_children(|parent| equipment.hud_nodes(asset_server, parent));
+    Ok(())
 }

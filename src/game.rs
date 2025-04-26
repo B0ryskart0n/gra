@@ -70,7 +70,7 @@ fn lifetime(time: Res<Time>, mut commands: Commands, mut query: Query<(Entity, &
     let dt = time.delta();
     query.iter_mut().for_each(|(e, mut l)| {
         if l.0.tick(dt).finished() {
-            commands.entity(e).despawn_recursive()
+            commands.entity(e).despawn()
         }
     })
 }
@@ -135,17 +135,19 @@ fn spawn_enemy(time: Res<Time>, mut commands: Commands, mut enemy_spawn: ResMut<
 fn enemy_state(
     mut q_enemies: Query<(&GlobalTransform, &mut Velocity), With<Enemy>>,
     q_player: Query<&GlobalTransform, (With<Player>, Without<Enemy>)>,
-) {
-    let player_pos = q_player.single().translation();
+) -> Result {
+    let player_pos = q_player.single()?.translation();
     q_enemies
         .iter_mut()
         .for_each(|(t, mut v)| v.0 = ENEMY_SPEED * (player_pos - t.translation()).normalize_or_zero());
+
+    Ok(())
 }
 
 fn despawn_unhealthy(mut commands: Commands, query: Query<(Entity, &Health), Without<Player>>) {
     query.iter().for_each(|(e, h)| {
         if h.0 <= 0.0 {
-            commands.entity(e).despawn_recursive();
+            commands.entity(e).despawn();
         }
     })
 }
@@ -174,7 +176,7 @@ fn enemy_hit(
         for (mut health, enemy_position) in enemies.iter_mut() {
             if hit_enemy_projectile(enemy_position.translation(), projectile_transform.translation()) {
                 health.0 = health.0 - 1.0;
-                commands.entity(projectile).despawn_recursive();
+                commands.entity(projectile).despawn();
                 // Projectile despawned, so can't influence other enemies. Go to next projectile.
                 // Maybe if in the future projectiles can pass through then handle differently.
                 break;
@@ -186,8 +188,8 @@ fn player_hit(
     q_enemies: Query<&GlobalTransform, With<Enemy>>,
     mut q_player: Query<(&mut Health, &GlobalTransform, &PlayerState), (With<Player>, Without<Enemy>)>,
     mut death_events: EventWriter<PlayerDeath>,
-) {
-    let (mut player_health, player_transform, player_state) = q_player.single_mut();
+) -> Result {
+    let (mut player_health, player_transform, player_state) = q_player.single_mut()?;
     let damage = match *player_state {
         PlayerState::Dashing => 0.0,
         _ => q_enemies
@@ -199,8 +201,10 @@ fn player_hit(
 
     player_health.0 -= damage;
     if player_health.0 <= 0.0 {
-        death_events.send_default();
+        death_events.write_default();
     }
+
+    Ok(())
 }
 
 fn handle_pickup_event(mut pickup_events: EventReader<ItemPickup>) {
@@ -214,8 +218,8 @@ fn pickup_items(
     mut equipment: ResMut<PlayerEquipment>,
     keyboard: Res<ButtonInput<KeyCode>>,
     mut pickup_events: EventWriter<ItemPickup>,
-) {
-    let player_pos = q_player.single().translation();
+) -> Result {
+    let player_pos = q_player.single()?.translation();
     if keyboard.just_pressed(KeyCode::KeyE) {
         // Finds the closest item within the `INTERACTION_DISTANCE` and picks it up.
         q_items
@@ -225,10 +229,12 @@ fn pickup_items(
             .min_by(|(_, _, x), (_, _, y)| x.partial_cmp(y).unwrap_or(Ordering::Equal))
             .map(|(entity, item, _)| {
                 equipment.pickup(item.clone());
-                commands.entity(entity).despawn_recursive();
-                pickup_events.send_default();
+                commands.entity(entity).despawn();
+                pickup_events.write_default();
             });
     }
+
+    Ok(())
 }
 
 /// In case of high frame rate (bigger than `FixedTime` 64Hz), if one swift button press is registered and
@@ -269,8 +275,8 @@ fn player_state(
     mut query: Query<(&mut PlayerState, &mut Velocity), With<Player>>,
     input: Res<PlayerInput>,
     mut dash_timer: ResMut<DashTimer>,
-) {
-    let (mut state, mut velocity) = query.single_mut();
+) -> Result {
+    let (mut state, mut velocity) = query.single_mut()?;
 
     let dt = time_fixed.delta();
 
@@ -293,6 +299,8 @@ fn player_state(
     };
 
     velocity.0 = input.direction * speed_mult * PLAYER_SPEED;
+
+    Ok(())
 }
 
 fn physics(time_fixed: Res<Time<Fixed>>, mut query: Query<(&mut Transform, &Velocity)>) {
@@ -307,8 +315,8 @@ fn attack(
     query: Query<(&GlobalTransform, &PlayerState), With<Player>>,
     cursor_position: Res<CursorPosition>,
     mut attack_speed: ResMut<AttackSpeed>,
-) {
-    let (player_transform, player_state) = query.single();
+) -> Result {
+    let (player_transform, player_state) = query.single()?;
     let player_position = player_transform.translation();
 
     attack_speed.0.tick(time_fixed.delta());
@@ -328,6 +336,8 @@ fn attack(
         ));
         attack_speed.0.reset();
     }
+
+    Ok(())
 }
 
 fn display_player_state(mut query: Query<(&mut Sprite, &PlayerState), Changed<PlayerState>>) {
@@ -344,8 +354,8 @@ fn update_camera(
     mut camera_query: Query<(&mut Transform, &GlobalTransform), With<Camera2d>>,
     // the Without<Camera2d> is required because both query Transform
     player_transform: Single<&Transform, (With<Player>, Without<Camera2d>)>,
-) {
-    let (mut camera_transform, camera_global_transform) = camera_query.single_mut();
+) -> Result {
+    let (mut camera_transform, camera_global_transform) = camera_query.single_mut()?;
 
     let camera_goal = match cursor_position.0 {
         // in case of no cursor on the screen just follow the player
@@ -361,4 +371,6 @@ fn update_camera(
     camera_transform
         .translation
         .smooth_nudge(&camera_goal, CAMERA_SPEED, time.delta_secs());
+
+    Ok(())
 }
