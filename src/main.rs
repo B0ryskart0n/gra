@@ -35,6 +35,7 @@ fn main() {
         .add_plugins(menu::menu_plugin)
         .add_plugins(settings::plugin)
         .add_plugins(game::game_plugin)
+        // Needs features = [ "bevy_dev_tools" ]
         // .add_plugins(bevy::dev_tools::fps_overlay::FpsOverlayPlugin::default())
         .run();
 }
