@@ -33,12 +33,20 @@ impl Stats {
     }
 }
 
-#[derive(PartialEq, Eq, Default, Component)]
+#[derive(PartialEq, Default, Component)]
 pub enum PlayerState {
     #[default]
     Idle,
-    Dashing,
+    Dashing(Vec3),
     Attacking,
+}
+impl PlayerState {
+    pub fn is_dashing(&self) -> bool {
+        match self {
+            PlayerState::Dashing(_) => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Component)]

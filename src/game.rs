@@ -186,7 +186,7 @@ fn player_hit(
 ) -> Result {
     let (mut player_health, player_transform, player_state) = q_player.single_mut()?;
     let damage = match *player_state {
-        PlayerState::Dashing => 0.0,
+        PlayerState::Dashing(_) => 0.0,
         _ => q_enemies
             .iter()
             .map(|enemy_transform| hit_player_enemy(player_transform.translation(), enemy_transform.translation()))
@@ -276,25 +276,25 @@ fn player_state(
 
     let dt = time_fixed.delta();
 
-    if *state == PlayerState::Dashing && dash_timer.0.tick(dt).finished() {
+    if state.is_dashing() && dash_timer.0.tick(dt).finished() {
         *state = PlayerState::Idle;
         dash_timer.0.reset();
     }
-    if *state != PlayerState::Dashing {
+    if !state.is_dashing() {
         *state = match (input.dash, input.attack) {
-            (true, _) => PlayerState::Dashing,
+            (true, _) => PlayerState::Dashing(input.direction),
             (false, true) => PlayerState::Attacking,
             (false, false) => PlayerState::Idle,
         };
     }
 
-    let speed_mult = match *state {
-        PlayerState::Idle => 1.0,
-        PlayerState::Dashing => 2.5,
-        PlayerState::Attacking => 0.5,
+    let base_velocity = match *state {
+        PlayerState::Idle => 1.0 * input.direction,
+        PlayerState::Dashing(dash) => 2.5 * dash,
+        PlayerState::Attacking => 0.5 * input.direction,
     };
 
-    velocity.0 = input.direction * speed_mult * stats.movement_speed;
+    velocity.0 = base_velocity * stats.movement_speed;
 
     Ok(())
 }
@@ -341,7 +341,7 @@ fn display_player_state(mut query: Query<(&mut Sprite, &PlayerState), Changed<Pl
     query.iter_mut().for_each(|(mut sprite, state)| match *state {
         PlayerState::Idle => sprite.color = Color::srgb(0.1, 1.0, 0.1),
         PlayerState::Attacking => sprite.color = Color::srgb(1.0, 0.1, 0.1),
-        PlayerState::Dashing => sprite.color = Color::srgb(0.0, 0.1, 1.0),
+        PlayerState::Dashing(_) => sprite.color = Color::srgb(0.1, 0.1, 1.0),
     })
 }
 

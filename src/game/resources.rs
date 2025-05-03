@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use super::components::*;
 use bevy::prelude::*;
 
-const DASH_TIME: f32 = 0.5;
+const DASH_TIME: f32 = 0.4;
 const ENEMY_SPAWN_INTERVAL: f32 = 5.0;
 
 #[derive(Resource, Default)]
