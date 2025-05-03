@@ -44,7 +44,7 @@ pub mod ui {
     use bevy::prelude::*;
     use bevy::ui::BackgroundColor;
 
-    // TODO Instead of taking a closure it migt be good to give it an EventWriter and handle that elsewhere.
+    // TODO Consider, instead of taking a closure taking an EventWriter and handle that elsewhere.
     /// Takes the Result of `.single_mut` called on a query for Button that should be updated
     /// based on the interaction, and the closure to call is it is pressed.
     /// Only works with `Result::Ok` variant, assuming the error means empty query caused by no `Changed<Interaction>`
