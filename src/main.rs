@@ -56,10 +56,11 @@ fn update_cursor_position(
 }
 
 fn spawn_camera(mut commands: Commands) {
-    commands.spawn((Camera2d, PrimaryCamera));
+    commands.spawn(PrimaryCamera);
 }
 
 #[derive(Component)]
+#[require(Camera2d)]
 struct PrimaryCamera;
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]

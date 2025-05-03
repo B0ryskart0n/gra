@@ -1,3 +1,4 @@
+use crate::PrimaryCamera;
 use bevy::prelude::*;
 use std::f32::consts::FRAC_1_SQRT_2;
 
@@ -31,6 +32,11 @@ pub fn _despawn<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: 
     for entity in &to_despawn {
         commands.entity(entity).despawn();
     }
+}
+
+pub fn reset_camera(mut q_camera: Query<&mut Transform, With<PrimaryCamera>>) -> Result {
+    q_camera.single_mut()?.translation = Vec3::ZERO;
+    Ok(())
 }
 
 pub mod ui {

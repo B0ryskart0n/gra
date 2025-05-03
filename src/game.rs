@@ -37,7 +37,7 @@ pub fn game_plugin(app: &mut App) {
         .init_resource::<PlayerEquipment>()
         .add_state_scoped_event::<PlayerDeath>(GameState::Game)
         .add_state_scoped_event::<ItemPickup>(GameState::Game)
-        .add_systems(OnEnter(GameState::Game), (spawn, hud::spawn))
+        .add_systems(OnEnter(GameState::Game), (reset_camera, spawn, hud::spawn))
         .add_systems(
             RunFixedMainLoop,
             handle_player_input
