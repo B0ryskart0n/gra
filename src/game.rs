@@ -3,6 +3,7 @@ mod events;
 mod hud;
 mod resources;
 
+use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
 use std::cmp::Ordering;
 use std::time::Duration;
@@ -59,7 +60,8 @@ pub fn game_plugin(app: &mut App) {
         .add_systems(
             Update,
             (
-                display_player_state,
+                pausing.run_if(input_just_pressed(KeyCode::Escape)),
+                player_state_visuals,
                 update_camera,
                 check_game_exit,
                 update_stats.run_if(on_event::<ItemPickup>),
@@ -104,12 +106,20 @@ fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
     ));
 }
 
+fn pausing(mut time: ResMut<Time<Virtual>>) {
+    if time.is_paused() {
+        time.unpause();
+    } else {
+        time.pause();
+    }
+}
+
 fn check_game_exit(
     keyboard: Res<ButtonInput<KeyCode>>,
     mut next_state: ResMut<NextState<GameState>>,
     death_events: EventReader<PlayerDeath>,
 ) {
-    if keyboard.just_pressed(KeyCode::Escape) || !death_events.is_empty() {
+    if keyboard.just_pressed(KeyCode::F4) || !death_events.is_empty() {
         next_state.set(GameState::Menu);
     }
 }
@@ -337,7 +347,7 @@ fn attack(
     Ok(())
 }
 
-fn display_player_state(mut query: Query<(&mut Sprite, &PlayerState), Changed<PlayerState>>) {
+fn player_state_visuals(mut query: Query<(&mut Sprite, &PlayerState), Changed<PlayerState>>) {
     query.iter_mut().for_each(|(mut sprite, state)| match *state {
         PlayerState::Idle => sprite.color = Color::srgb(0.1, 1.0, 0.1),
         PlayerState::Attacking => sprite.color = Color::srgb(1.0, 0.1, 0.1),
