@@ -63,7 +63,7 @@ pub fn game_plugin(app: &mut App) {
                 pausing.run_if(input_just_pressed(KeyCode::Escape)),
                 player_state_visuals,
                 update_camera,
-                check_game_exit,
+                exit_game.run_if(input_just_pressed(KeyCode::F4).or(on_event::<PlayerDeath>)),
                 update_stats.run_if(on_event::<ItemPickup>),
                 pickup_items,
                 hud::update_health,
@@ -114,14 +114,8 @@ fn pausing(mut time: ResMut<Time<Virtual>>) {
     }
 }
 
-fn check_game_exit(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut next_state: ResMut<NextState<GameState>>,
-    death_events: EventReader<PlayerDeath>,
-) {
-    if keyboard.just_pressed(KeyCode::F4) || !death_events.is_empty() {
-        next_state.set(GameState::Menu);
-    }
+fn exit_game(mut next_state: ResMut<NextState<GameState>>) {
+    next_state.set(GameState::Menu);
 }
 
 fn spawn_enemy(time: Res<Time<Fixed>>, mut commands: Commands, mut enemy_spawn: ResMut<EnemySpawn>) {
