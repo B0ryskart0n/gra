@@ -13,7 +13,7 @@ pub struct PlayerInput {
     pub attack: bool,
 }
 /// Timer of 1 second, scaled by the `Stats` `attack_speed`
-#[derive(Resource)]
+#[derive(Resource, Deref, DerefMut)]
 pub struct AttackTimer(pub Timer);
 impl Default for AttackTimer {
     fn default() -> Self {

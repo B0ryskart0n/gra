@@ -318,9 +318,8 @@ fn attack(
 ) -> Result {
     let (player_transform, player_state, stats) = query.single()?;
     let player_position = player_transform.translation();
-    let dt = time_fixed.delta_secs();
 
-    attack_timer.0.tick(Duration::from_secs_f32(dt * stats.attack_speed));
+    attack_timer.tick(Duration::mul_f32(time_fixed.delta(), stats.attack_speed));
 
     if *player_state == PlayerState::Attacking && attack_timer.0.finished() {
         commands.spawn((
