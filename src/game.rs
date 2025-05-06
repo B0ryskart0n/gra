@@ -1,6 +1,7 @@
 mod components;
 mod events;
 mod hud;
+mod pause;
 mod resources;
 
 use bevy::input::common_conditions::input_just_pressed;
@@ -29,16 +30,20 @@ const CAMERA_SPEED: f32 = 8.0;
 const CURSOR_CAMERA_INFLUENCE: f32 = 0.3;
 
 pub fn game_plugin(app: &mut App) {
-    // Since I want to rely on `resource_changed` condition I need to initiate
-    // those resources at the top level instead of `OnEnter(GameState::Game)`.
-    app.init_resource::<PlayerInput>()
+    app.add_sub_state::<GameSubState>()
+        // Since I want to rely on `resource_changed` condition I need to initiate
+        // those resources at the top level instead of `OnEnter(GameState::Game)`.
+        .init_resource::<PlayerInput>()
         .init_resource::<DashTimer>()
         .init_resource::<AttackTimer>()
         .init_resource::<EnemySpawn>()
         .init_resource::<PlayerEquipment>()
         .add_state_scoped_event::<PlayerDeath>(MainState::Game)
         .add_state_scoped_event::<ItemPickup>(MainState::Game)
-        .add_systems(OnEnter(MainState::Game), (reset_camera, spawn, hud::spawn))
+        .add_systems(
+            OnEnter(MainState::Game),
+            (reset_camera, spawn, hud::spawn, pause::spawn_invisible_overlay),
+        )
         .add_systems(
             RunFixedMainLoop,
             handle_player_input
@@ -60,7 +65,7 @@ pub fn game_plugin(app: &mut App) {
         .add_systems(
             Update,
             (
-                pausing.run_if(input_just_pressed(KeyCode::Escape)),
+                pause::toggle.run_if(input_just_pressed(KeyCode::Escape)),
                 player_state_visuals,
                 update_camera,
                 exit_game.run_if(input_just_pressed(KeyCode::F4).or(on_event::<PlayerDeath>)),
@@ -104,14 +109,6 @@ fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
         Transform::from_translation(Vec3::from((100.0, -100.0, 0.4))),
         StateScoped(MainState::Game),
     ));
-}
-
-fn pausing(mut time: ResMut<Time<Virtual>>) {
-    if time.is_paused() {
-        time.unpause();
-    } else {
-        time.pause();
-    }
 }
 
 fn exit_game(mut next_state: ResMut<NextState<MainState>>) {
@@ -373,4 +370,12 @@ fn update_camera(
         .smooth_nudge(&camera_goal, CAMERA_SPEED, time.delta_secs());
 
     Ok(())
+}
+
+#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, SubStates)]
+#[source(MainState = MainState::Game)]
+enum GameSubState {
+    #[default]
+    Running,
+    Paused,
 }
