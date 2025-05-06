@@ -9,7 +9,7 @@ use std::cmp::Ordering;
 use std::time::Duration;
 
 use crate::CursorPosition;
-use crate::GameState;
+use crate::MainState;
 use crate::utils::*;
 use components::*;
 use events::*;
@@ -36,13 +36,13 @@ pub fn game_plugin(app: &mut App) {
         .init_resource::<AttackTimer>()
         .init_resource::<EnemySpawn>()
         .init_resource::<PlayerEquipment>()
-        .add_state_scoped_event::<PlayerDeath>(GameState::Game)
-        .add_state_scoped_event::<ItemPickup>(GameState::Game)
-        .add_systems(OnEnter(GameState::Game), (reset_camera, spawn, hud::spawn))
+        .add_state_scoped_event::<PlayerDeath>(MainState::Game)
+        .add_state_scoped_event::<ItemPickup>(MainState::Game)
+        .add_systems(OnEnter(MainState::Game), (reset_camera, spawn, hud::spawn))
         .add_systems(
             RunFixedMainLoop,
             handle_player_input
-                .run_if(in_state(GameState::Game))
+                .run_if(in_state(MainState::Game))
                 .in_set(RunFixedMainLoopSystem::BeforeFixedMainLoop),
         )
         .add_systems(
@@ -55,7 +55,7 @@ pub fn game_plugin(app: &mut App) {
                 lifetime,
                 (player_state, enemy_state, physics).chain(),
             )
-                .run_if(in_state(GameState::Game)),
+                .run_if(in_state(MainState::Game)),
         )
         .add_systems(
             Update,
@@ -69,7 +69,7 @@ pub fn game_plugin(app: &mut App) {
                 hud::update_health,
                 hud::update_equipment.run_if(resource_changed::<PlayerEquipment>),
             )
-                .run_if(in_state(GameState::Game)),
+                .run_if(in_state(MainState::Game)),
         );
     // .add_systems(OnExit(GameState::Game), on_game_exit);
 }
@@ -86,7 +86,7 @@ fn lifetime(time: Res<Time>, mut commands: Commands, mut query: Query<(Entity, &
 fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         Sprite::from_color(Color::BLACK, Vec2::from((640.0, 360.0))),
-        StateScoped(GameState::Game),
+        StateScoped(MainState::Game),
     ));
     commands.spawn((
         Player,
@@ -96,13 +96,13 @@ fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
         PlayerState::default(),
         Transform::from_translation(Vec3::from((0.0, 0.0, 1.0))),
         Velocity(Vec3::ZERO),
-        StateScoped(GameState::Game),
+        StateScoped(MainState::Game),
     ));
     commands.spawn((
         Item::Banana,
         Sprite::from_image(asset_server.load("banana.png")),
         Transform::from_translation(Vec3::from((100.0, -100.0, 0.4))),
-        StateScoped(GameState::Game),
+        StateScoped(MainState::Game),
     ));
 }
 
@@ -114,8 +114,8 @@ fn pausing(mut time: ResMut<Time<Virtual>>) {
     }
 }
 
-fn exit_game(mut next_state: ResMut<NextState<GameState>>) {
-    next_state.set(GameState::Menu);
+fn exit_game(mut next_state: ResMut<NextState<MainState>>) {
+    next_state.set(MainState::Menu);
 }
 
 fn spawn_enemy(time: Res<Time<Fixed>>, mut commands: Commands, mut enemy_spawn: ResMut<EnemySpawn>) {
@@ -126,7 +126,7 @@ fn spawn_enemy(time: Res<Time<Fixed>>, mut commands: Commands, mut enemy_spawn: 
             Velocity(Vec3::ZERO),
             Sprite::from_color(Color::srgb(1.0, 0.0, 0.6), Vec2::from((ENEMY_SIZE, ENEMY_SIZE))),
             Transform::from_translation(Vec3::from((320.0, 180.0, 0.5))),
-            StateScoped(GameState::Game),
+            StateScoped(MainState::Game),
         ));
     }
 }
@@ -331,7 +331,7 @@ fn attack(
                 (cursor_position.0.unwrap_or(Vec2::X).extend(0.0) - player_position).normalize(),
                 PROJECTILE_SPEED,
             )),
-            StateScoped(GameState::Game),
+            StateScoped(MainState::Game),
             Lifetime(Timer::from_seconds(PROJECTILE_LIFETIME, TimerMode::Once)),
         ));
         attack_timer.0.reset();

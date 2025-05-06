@@ -1,4 +1,4 @@
-use crate::GameState;
+use crate::MainState;
 use crate::utils::ui::*;
 
 use bevy::prelude::*;
@@ -11,7 +11,7 @@ pub const SCALE: f32 = 2.0;
 
 pub fn plugin(app: &mut App) {
     app.init_resource::<UserSettings>()
-        .add_systems(OnEnter(GameState::Settings), setup_ui)
+        .add_systems(OnEnter(MainState::Settings), setup_ui)
         .add_systems(
             Update,
             (
@@ -23,13 +23,13 @@ pub fn plugin(app: &mut App) {
                 handle_resolution_button,
                 handle_window_mode_button,
             )
-                .run_if(in_state(GameState::Settings)),
+                .run_if(in_state(MainState::Settings)),
         );
 }
 
 fn setup_ui(mut commands: Commands) {
     commands
-        .spawn((typical_parent_node(), StateScoped(GameState::Settings)))
+        .spawn((typical_parent_node(), StateScoped(MainState::Settings)))
         .with_children(|parent| {
             parent
                 .spawn(Node {
@@ -94,16 +94,16 @@ fn update_text_res(
     q_resolution.single_mut()?.0 = user_settings.window.res_str();
     Ok(())
 }
-fn handle_keyboard(keyboard: Res<ButtonInput<KeyCode>>, mut next_state: ResMut<NextState<GameState>>) {
+fn handle_keyboard(keyboard: Res<ButtonInput<KeyCode>>, mut next_state: ResMut<NextState<MainState>>) {
     if keyboard.just_pressed(KeyCode::Escape) {
-        next_state.set(GameState::Menu);
+        next_state.set(MainState::Menu);
     }
 }
 fn handle_menu_button(
     mut q_button: Query<(&Interaction, &mut BackgroundColor), (With<MenuButton>, Changed<Interaction>)>,
-    mut next_state: ResMut<NextState<GameState>>,
+    mut next_state: ResMut<NextState<MainState>>,
 ) {
-    button_interaction(q_button.single_mut(), || next_state.set(GameState::Menu));
+    button_interaction(q_button.single_mut(), || next_state.set(MainState::Menu));
 }
 fn handle_apply_button(
     mut q_button: Query<(&Interaction, &mut BackgroundColor), (With<ApplyButton>, Changed<Interaction>)>,

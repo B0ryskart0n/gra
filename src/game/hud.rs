@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use super::components::*;
 use super::resources::*;
-use crate::GameState;
+use crate::MainState;
 
 pub fn spawn(mut commands: Commands) {
     commands
@@ -16,7 +16,7 @@ pub fn spawn(mut commands: Commands) {
                 align_items: AlignItems::Center,
                 ..Node::DEFAULT
             },
-            StateScoped(GameState::Game),
+            StateScoped(MainState::Game),
         ))
         .with_children(|parent| {
             parent.spawn((

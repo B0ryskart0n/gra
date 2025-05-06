@@ -26,8 +26,8 @@ fn main() {
                 .set(ImagePlugin::default_nearest()),
         )
         // Needs to be done after DefaultPlugins, because DefaultPlugins initializes StateTransitions
-        .init_state::<GameState>() // Initial state will be the #[default]
-        .enable_state_scoped_entities::<GameState>()
+        .init_state::<MainState>() // Initial state will be the #[default]
+        .enable_state_scoped_entities::<MainState>()
         .init_resource::<CursorPosition>()
         .add_systems(Startup, spawn_camera)
         .add_systems(Update, update_cursor_position)
@@ -64,7 +64,7 @@ fn spawn_camera(mut commands: Commands) {
 struct PrimaryCamera;
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
-enum GameState {
+enum MainState {
     #[default]
     Splash,
     Menu,

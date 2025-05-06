@@ -1,10 +1,10 @@
-use super::GameState;
+use super::MainState;
 use crate::utils::ui::*;
 use crate::utils::*;
 use bevy::prelude::*;
 
 pub fn menu_plugin(app: &mut App) {
-    app.add_systems(OnEnter(GameState::Menu), (reset_camera, setup_ui))
+    app.add_systems(OnEnter(MainState::Menu), (reset_camera, setup_ui))
         .add_systems(
             Update,
             (
@@ -13,13 +13,13 @@ pub fn menu_plugin(app: &mut App) {
                 handle_settings_button,
                 handle_exit_button,
             )
-                .run_if(in_state(GameState::Menu)),
+                .run_if(in_state(MainState::Menu)),
         );
 }
 
 fn setup_ui(mut commands: Commands) -> Result {
     commands
-        .spawn((typical_parent_node(), StateScoped(GameState::Menu)))
+        .spawn((typical_parent_node(), StateScoped(MainState::Menu)))
         .with_children(|parent| {
             parent.spawn((GameButton, Text::new("Play")));
             parent.spawn((SettingsButton, Text::new("Settings")));
@@ -28,27 +28,27 @@ fn setup_ui(mut commands: Commands) -> Result {
     Ok(())
 }
 
-fn handle_keyboard(keyboard: Res<ButtonInput<KeyCode>>, mut next_state: ResMut<NextState<GameState>>) {
+fn handle_keyboard(keyboard: Res<ButtonInput<KeyCode>>, mut next_state: ResMut<NextState<MainState>>) {
     if keyboard.just_pressed(KeyCode::Enter) {
-        next_state.set(GameState::Game);
+        next_state.set(MainState::Game);
     }
     if keyboard.just_pressed(KeyCode::Escape) {
-        next_state.set(GameState::Settings);
+        next_state.set(MainState::Settings);
     }
 }
 
 fn handle_game_button(
     mut q_button: Query<(&Interaction, &mut BackgroundColor), (With<GameButton>, Changed<Interaction>)>,
-    mut next_state: ResMut<NextState<GameState>>,
+    mut next_state: ResMut<NextState<MainState>>,
 ) -> Result {
-    button_interaction(q_button.single_mut(), || next_state.set(GameState::Game));
+    button_interaction(q_button.single_mut(), || next_state.set(MainState::Game));
     Ok(())
 }
 fn handle_settings_button(
     mut q_button: Query<(&Interaction, &mut BackgroundColor), With<SettingsButton>>,
-    mut next_state: ResMut<NextState<GameState>>,
+    mut next_state: ResMut<NextState<MainState>>,
 ) {
-    button_interaction(q_button.single_mut(), || next_state.set(GameState::Settings));
+    button_interaction(q_button.single_mut(), || next_state.set(MainState::Settings));
 }
 fn handle_exit_button(
     mut q_button: Query<(&Interaction, &mut BackgroundColor), With<ExitButton>>,
