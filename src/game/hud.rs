@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use super::components::*;
-use super::resources::*;
+use super::player::*;
 use crate::MainState;
 
 pub fn spawn(mut commands: Commands) {

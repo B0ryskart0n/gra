@@ -1,31 +1,5 @@
 use crate::PrimaryCamera;
 use bevy::prelude::*;
-use std::f32::consts::FRAC_1_SQRT_2;
-
-pub const DIRECTION_RIGHT: Vec3 = Vec3::X;
-pub const DIRECTION_UPRIGHT: Vec3 = Vec3 {
-    x: FRAC_1_SQRT_2,
-    y: FRAC_1_SQRT_2,
-    z: 0.0,
-};
-pub const DIRECTION_UP: Vec3 = Vec3::Y;
-pub const DIRECTION_UPLEFT: Vec3 = Vec3 {
-    x: -FRAC_1_SQRT_2,
-    y: FRAC_1_SQRT_2,
-    z: 0.0,
-};
-pub const DIRECTION_LEFT: Vec3 = Vec3::NEG_X;
-pub const DIRECTION_DOWNLEFT: Vec3 = Vec3 {
-    x: -FRAC_1_SQRT_2,
-    y: -FRAC_1_SQRT_2,
-    z: 0.0,
-};
-pub const DIRECTION_DOWN: Vec3 = Vec3::NEG_Y;
-pub const DIRECTION_DOWNRIGHT: Vec3 = Vec3 {
-    x: FRAC_1_SQRT_2,
-    y: -FRAC_1_SQRT_2,
-    z: 0.0,
-};
 
 // Generic system that takes a component as a parameter, and will despawn all entities with that component
 pub fn _despawn<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
@@ -37,6 +11,25 @@ pub fn _despawn<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: 
 pub fn reset_camera(mut q_camera: Query<&mut Transform, With<PrimaryCamera>>) -> Result {
     q_camera.single_mut()?.translation = Vec3::ZERO;
     Ok(())
+}
+
+pub fn square_collide(pos_a: Vec3, size_a: f32, pos_b: Vec3, size_b: f32) -> bool {
+    return pos_a.x - size_a / 2.0 < pos_b.x + size_b / 2.0
+        && pos_a.x + size_a / 2.0 > pos_b.x - size_b / 2.0
+        && pos_a.y - size_a / 2.0 < pos_b.y + size_b / 2.0
+        && pos_a.y + size_a / 2.0 > pos_b.y - size_b / 2.0;
+}
+
+#[derive(Component)]
+pub struct Lifetime(pub Timer);
+
+pub fn lifetime(time: Res<Time>, mut commands: Commands, mut query: Query<(Entity, &mut Lifetime)>) {
+    let dt = time.delta();
+    query.iter_mut().for_each(|(e, mut l)| {
+        if l.0.tick(dt).finished() {
+            commands.entity(e).despawn()
+        }
+    })
 }
 
 pub mod ui {
