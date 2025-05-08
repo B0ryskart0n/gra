@@ -1,8 +1,13 @@
 use bevy::prelude::*;
 
-use super::components::*;
-use super::player::*;
+use super::*;
 use crate::MainState;
+
+#[derive(Component)]
+pub struct HealthHud;
+
+#[derive(Component)]
+pub struct EquipmentNode;
 
 pub fn spawn(mut commands: Commands) {
     commands
@@ -52,15 +57,16 @@ pub fn update_health(
     Ok(())
 }
 
-/// Should only be run if `PlayerEquipment` changes, since it modifies components
+/// Should only be run if `Equipment` changes, since it modifies components
 pub fn update_equipment(
     mut commands: Commands,
-    q_eq_node: Query<Entity, With<EquipmentNode>>,
+    q_equipment_node: Query<Entity, With<EquipmentNode>>,
+    q_equipment: Query<&Equipment>,
     asset_server: Res<AssetServer>,
-    equipment: Res<PlayerEquipment>,
 ) -> Result {
+    let equipment = q_equipment.single()?;
     commands
-        .entity(q_eq_node.single()?)
+        .entity(q_equipment_node.single()?)
         .despawn_related::<Children>()
         .with_children(|parent| equipment.hud_nodes(asset_server, parent));
     Ok(())

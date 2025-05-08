@@ -1,16 +1,14 @@
-use super::components::*;
+use super::*;
 use crate::CursorPosition;
 use crate::MainState;
 use crate::utils::*;
 use bevy::prelude::*;
-use std::collections::HashMap;
 use std::f32::consts::FRAC_1_SQRT_2;
 use std::time::Duration;
 
 const PROJECTILE_SIZE: f32 = 2.0;
 const PROJECTILE_LIFETIME: f32 = 1.0;
 const PROJECTILE_SPEED: f32 = 400.0;
-const DASH_TIME: f32 = 0.4;
 const DIRECTION_RIGHT: Vec3 = Vec3::X;
 const DIRECTION_UPRIGHT: Vec3 = Vec3 {
     x: FRAC_1_SQRT_2,
@@ -35,11 +33,6 @@ const DIRECTION_DOWNRIGHT: Vec3 = Vec3 {
     y: -FRAC_1_SQRT_2,
     z: 0.0,
 };
-const ATTACK_SPEED: f32 = 2.0;
-pub const PLAYER_SIZE: f32 = 25.0;
-const PLAYER_SPEED: f32 = 120.0;
-const PLAYER_HEALTH: f32 = 100.0;
-
 pub fn spawn(mut commands: Commands) {
     commands.spawn((
         Player,
@@ -53,12 +46,10 @@ pub fn spawn(mut commands: Commands) {
     ));
 }
 
-#[derive(Resource)]
-pub struct DashTimer(pub Timer);
-impl Default for DashTimer {
-    fn default() -> Self {
-        DashTimer(Timer::from_seconds(DASH_TIME, TimerMode::Once))
-    }
+pub fn update_stats(mut q_player: Query<(&mut Stats, &Equipment)>) -> Result {
+    let (mut stats, eq) = q_player.single_mut()?;
+    stats.apply_equipment(&eq);
+    Ok(())
 }
 
 /// In case of high frame rate (bigger than `FixedTime` 64Hz), if one swift button press is registered and
@@ -135,70 +126,7 @@ pub fn handle_state(
     Ok(())
 }
 
-#[derive(Component)]
-pub struct Player;
-
-#[derive(Component)]
-pub struct Stats {
-    pub max_health: f32,
-    pub attack_speed: f32,
-    pub movement_speed: f32,
-}
-impl Default for Stats {
-    fn default() -> Self {
-        Self {
-            max_health: PLAYER_HEALTH,
-            attack_speed: ATTACK_SPEED,
-            movement_speed: PLAYER_SPEED,
-        }
-    }
-}
-impl Stats {
-    pub fn apply_equipment(&mut self, eq: &PlayerEquipment) {
-        self.attack_speed *= 1.0 + eq.item_stat(&Item::Banana);
-    }
-}
-
-#[derive(Resource, Default)]
-pub struct PlayerInput {
-    pub direction: Vec3,
-    pub dash: bool,
-    pub attack: bool,
-}
-
-#[derive(PartialEq, Default, Component)]
-pub enum PlayerState {
-    #[default]
-    Idle,
-    Dashing(Vec3),
-    Attacking,
-}
-impl PlayerState {
-    pub fn is_dashing(&self) -> bool {
-        match self {
-            PlayerState::Dashing(_) => true,
-            _ => false,
-        }
-    }
-}
-
-#[derive(Resource, Default)]
-pub struct PlayerEquipment(HashMap<Item, u8>);
-impl PlayerEquipment {
-    pub fn pickup(&mut self, item: Item) {
-        self.0.entry(item).and_modify(|count| *count += 1).or_insert(1);
-    }
-    pub fn hud_nodes(&self, asset_server: Res<AssetServer>, spawner: &mut ChildSpawnerCommands) {
-        self.0.iter().filter(|(_, val)| **val != 0u8).for_each(|(key, _)| {
-            spawner.spawn(ImageNode::new(key.image(&asset_server)));
-        });
-    }
-    pub fn item_stat(&self, item: &Item) -> f32 {
-        *self.0.get(item).unwrap_or(&0u8) as f32 * Item::stat(item)
-    }
-}
-
-pub fn player_hit(
+pub fn hit(
     q_enemies: Query<&GlobalTransform, With<Enemy>>,
     mut q_player: Query<(&mut Health, &GlobalTransform, &PlayerState), (With<Player>, Without<Enemy>)>,
     mut death_events: EventWriter<PlayerDeath>,
@@ -258,15 +186,3 @@ pub fn attack(
 
     Ok(())
 }
-
-/// Timer of 1 second, scaled by the `Stats` `attack_speed`
-#[derive(Resource, Deref, DerefMut)]
-pub struct AttackTimer(pub Timer);
-impl Default for AttackTimer {
-    fn default() -> Self {
-        AttackTimer(Timer::from_seconds(1.0, TimerMode::Once))
-    }
-}
-
-#[derive(Event, Default)]
-pub struct PlayerDeath;

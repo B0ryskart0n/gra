@@ -1,5 +1,5 @@
-use super::GameSubState;
-use super::MainState;
+use super::*;
+use crate::MainState;
 use bevy::prelude::*;
 
 pub fn toggle(
