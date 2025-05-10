@@ -37,6 +37,7 @@ pub fn spawn(mut commands: Commands) {
     commands.spawn((
         Player,
         Health(PLAYER_HEALTH),
+        Equipment::default(),
         Stats::default(),
         Sprite::from_color(Color::WHITE, Vec2::from((PLAYER_SIZE, PLAYER_SIZE))),
         PlayerState::default(),
