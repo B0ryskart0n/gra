@@ -68,7 +68,7 @@ impl Stats {
     }
 }
 
-#[derive(Resource)]
+#[derive(Component)]
 struct DashTimer(Timer);
 impl Default for DashTimer {
     fn default() -> Self {
@@ -120,7 +120,7 @@ struct Pickable;
 #[derive(Event, Default)]
 struct PlayerDeath;
 
-#[derive(Resource, Default)]
+#[derive(Component, Default)]
 struct PlayerInput {
     direction: Vec3,
     dash: bool,
@@ -128,20 +128,18 @@ struct PlayerInput {
 }
 
 /// Timer of 1 second, scaled by the `Stats` `attack_speed`
-#[derive(Resource, Deref, DerefMut)]
+#[derive(Component, Deref, DerefMut)]
 struct AttackTimer(Timer);
 impl Default for AttackTimer {
     fn default() -> Self {
         AttackTimer(Timer::from_seconds(1.0, TimerMode::Once))
     }
 }
+
 pub fn game_plugin(app: &mut App) {
     app.add_sub_state::<GameSubState>()
         // Since I want to rely on `resource_changed` condition I need to initiate
         // those resources at the top level instead of `OnEnter(GameState::Game)`.
-        .init_resource::<PlayerInput>()
-        .init_resource::<DashTimer>()
-        .init_resource::<AttackTimer>()
         .init_resource::<EnemySpawn>()
         .add_state_scoped_event::<PlayerDeath>(MainState::Game)
         .add_state_scoped_event::<ItemPickup>(MainState::Game)

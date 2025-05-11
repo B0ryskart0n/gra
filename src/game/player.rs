@@ -36,6 +36,9 @@ const DIRECTION_DOWNRIGHT: Vec3 = Vec3 {
 pub fn spawn(mut commands: Commands) {
     commands.spawn((
         Player,
+        DashTimer::default(),
+        AttackTimer::default(),
+        PlayerInput::default(),
         Health(PLAYER_HEALTH),
         Equipment::default(),
         Stats::default(),
@@ -60,8 +63,10 @@ pub fn update_stats(mut q_player: Query<(&mut Stats, &Equipment)>) -> Result {
 pub fn handle_input(
     mouse: Res<ButtonInput<MouseButton>>,
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut player_input: ResMut<PlayerInput>,
-) {
+    mut q_input: Query<&mut PlayerInput>,
+) -> Result {
+    let mut player_input = q_input.single_mut()?;
+
     let left = keyboard.pressed(KeyCode::KeyA);
     let right = keyboard.pressed(KeyCode::KeyD);
     let down = keyboard.pressed(KeyCode::KeyS);
@@ -84,6 +89,7 @@ pub fn handle_input(
 
     player_input.dash = keyboard.any_just_pressed(vec![KeyCode::ShiftLeft, KeyCode::Space]);
     player_input.attack = mouse.pressed(MouseButton::Left);
+    Ok(())
 }
 
 pub fn visual_state(mut query: Query<(&mut Sprite, &PlayerState), Changed<PlayerState>>) {
@@ -96,11 +102,9 @@ pub fn visual_state(mut query: Query<(&mut Sprite, &PlayerState), Changed<Player
 
 pub fn handle_state(
     time_fixed: Res<Time<Fixed>>,
-    mut query: Query<(&mut PlayerState, &mut Velocity, &Stats), With<Player>>,
-    input: Res<PlayerInput>,
-    mut dash_timer: ResMut<DashTimer>,
+    mut q_player: Query<(&PlayerInput, &mut PlayerState, &mut Velocity, &mut DashTimer, &Stats), With<Player>>,
 ) -> Result {
-    let (mut state, mut velocity, stats) = query.single_mut()?;
+    let (input, mut state, mut velocity, mut dash_timer, stats) = q_player.single_mut()?;
 
     let dt = time_fixed.delta();
 
@@ -160,11 +164,10 @@ pub fn hit(
 pub fn attack(
     time_fixed: Res<Time<Fixed>>,
     mut commands: Commands,
-    query: Query<(&GlobalTransform, &PlayerState, &Stats), With<Player>>,
+    mut q_player: Query<(&mut AttackTimer, &GlobalTransform, &PlayerState, &Stats), With<Player>>,
     cursor_position: Res<CursorPosition>,
-    mut attack_timer: ResMut<AttackTimer>,
 ) -> Result {
-    let (player_transform, player_state, stats) = query.single()?;
+    let (mut attack_timer, player_transform, player_state, stats) = q_player.single_mut()?;
     let player_position = player_transform.translation();
 
     attack_timer.tick(Duration::mul_f32(time_fixed.delta(), stats.attack_speed));
