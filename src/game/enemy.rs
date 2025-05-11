@@ -34,7 +34,6 @@ pub fn handle_state(
 
     Ok(())
 }
-
 pub fn hit(
     mut commands: Commands,
     mut enemies: Query<(&mut Health, &GlobalTransform), With<Enemy>>,
@@ -54,6 +53,13 @@ pub fn hit(
                 // Maybe if in the future projectiles can pass through then handle differently.
                 break;
             }
+        }
+    })
+}
+pub fn despawn_unhealthy(mut commands: Commands, query: Query<(Entity, &Health), With<Enemy>>) {
+    query.iter().for_each(|(e, h)| {
+        if h.0 <= 0.0 {
+            commands.entity(e).despawn();
         }
     })
 }

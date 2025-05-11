@@ -4,6 +4,14 @@ use std::cmp::Ordering;
 
 const INTERACTION_DISTANCE: f32 = 30.0;
 
+pub fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn((
+        Item::Banana,
+        Sprite::from_image(asset_server.load("banana.png")),
+        Transform::from_translation(Vec3::from((100.0, -100.0, 0.4))),
+        StateScoped(MainState::Game),
+    ));
+}
 pub fn pickup(
     mut commands: Commands,
     mut q_player: Query<(&GlobalTransform, &mut Equipment), With<Player>>,

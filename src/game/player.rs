@@ -33,6 +33,7 @@ const DIRECTION_DOWNRIGHT: Vec3 = Vec3 {
     y: -FRAC_1_SQRT_2,
     z: 0.0,
 };
+
 pub fn spawn(mut commands: Commands) {
     commands.spawn((
         Player,
@@ -49,13 +50,11 @@ pub fn spawn(mut commands: Commands) {
         StateScoped(MainState::Game),
     ));
 }
-
 pub fn update_stats(mut q_player: Query<(&mut Stats, &Equipment)>) -> Result {
     let (mut stats, eq) = q_player.single_mut()?;
     stats.apply_equipment(&eq);
     Ok(())
 }
-
 /// In case of high frame rate (bigger than `FixedTime` 64Hz), if one swift button press is registered and
 /// that input is overriden in  next schedule run (when the button is already released) and
 /// the `FixedUpdate` schedule did not run, because the two frames were too close to each other,
@@ -91,7 +90,6 @@ pub fn handle_input(
     player_input.attack = mouse.pressed(MouseButton::Left);
     Ok(())
 }
-
 pub fn visual_state(mut query: Query<(&mut Sprite, &PlayerState), Changed<PlayerState>>) {
     query.iter_mut().for_each(|(mut sprite, state)| match *state {
         PlayerState::Idle => sprite.color = Color::srgb(0.1, 1.0, 0.1),
@@ -99,7 +97,6 @@ pub fn visual_state(mut query: Query<(&mut Sprite, &PlayerState), Changed<Player
         PlayerState::Dashing(_) => sprite.color = Color::srgb(0.1, 0.1, 1.0),
     })
 }
-
 pub fn handle_state(
     time_fixed: Res<Time<Fixed>>,
     mut q_player: Query<(&PlayerInput, &mut PlayerState, &mut Velocity, &mut DashTimer, &Stats), With<Player>>,
@@ -130,7 +127,6 @@ pub fn handle_state(
 
     Ok(())
 }
-
 pub fn hit(
     q_enemies: Query<&GlobalTransform, With<Enemy>>,
     mut q_player: Query<(&mut Health, &GlobalTransform, &PlayerState), (With<Player>, Without<Enemy>)>,
@@ -160,7 +156,6 @@ pub fn hit(
 
     Ok(())
 }
-
 pub fn attack(
     time_fixed: Res<Time<Fixed>>,
     mut commands: Commands,
