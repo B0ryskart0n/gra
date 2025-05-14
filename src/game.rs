@@ -3,6 +3,7 @@ mod hud;
 mod items;
 mod pause;
 mod player;
+mod stages;
 
 use super::CursorPosition;
 use super::MainState;
@@ -36,6 +37,7 @@ pub fn game_plugin(app: &mut App) {
             OnEnter(MainState::Game),
             (
                 utils::reset_camera,
+                stages::stage0,
                 items::spawn,
                 player::spawn,
                 hud::spawn,
