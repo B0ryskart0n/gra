@@ -22,7 +22,11 @@ fn exit_splash(mut commands: Commands) {
     commands.remove_resource::<SplashTimer>();
 }
 
-fn splash_update(time: Res<Time>, mut next_state: ResMut<NextState<MainState>>, mut timer: ResMut<SplashTimer>) {
+fn splash_update(
+    time: Res<Time>,
+    mut next_state: ResMut<NextState<MainState>>,
+    mut timer: ResMut<SplashTimer>,
+) {
     if timer.tick(time.delta()).finished() {
         next_state.set(MainState::Menu);
     }

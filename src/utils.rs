@@ -23,7 +23,11 @@ pub fn square_collide(pos_a: Vec3, size_a: f32, pos_b: Vec3, size_b: f32) -> boo
 #[derive(Component)]
 pub struct Lifetime(pub Timer);
 
-pub fn lifetime(time: Res<Time>, mut commands: Commands, mut query: Query<(Entity, &mut Lifetime)>) {
+pub fn lifetime(
+    time: Res<Time>,
+    mut commands: Commands,
+    mut query: Query<(Entity, &mut Lifetime)>,
+) {
     let dt = time.delta();
     query.iter_mut().for_each(|(e, mut l)| {
         if l.0.tick(dt).finished() {

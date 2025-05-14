@@ -28,7 +28,10 @@ fn setup_ui(mut commands: Commands) -> Result {
     Ok(())
 }
 
-fn handle_keyboard(keyboard: Res<ButtonInput<KeyCode>>, mut next_state: ResMut<NextState<MainState>>) {
+fn handle_keyboard(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut next_state: ResMut<NextState<MainState>>,
+) {
     if keyboard.just_pressed(KeyCode::Enter) {
         next_state.set(MainState::Game);
     }
@@ -38,7 +41,10 @@ fn handle_keyboard(keyboard: Res<ButtonInput<KeyCode>>, mut next_state: ResMut<N
 }
 
 fn handle_game_button(
-    mut q_button: Query<(&Interaction, &mut BackgroundColor), (With<GameButton>, Changed<Interaction>)>,
+    mut q_button: Query<
+        (&Interaction, &mut BackgroundColor),
+        (With<GameButton>, Changed<Interaction>),
+    >,
     mut next_state: ResMut<NextState<MainState>>,
 ) -> Result {
     button_interaction(q_button.single_mut(), || next_state.set(MainState::Game));
@@ -48,7 +54,9 @@ fn handle_settings_button(
     mut q_button: Query<(&Interaction, &mut BackgroundColor), With<SettingsButton>>,
     mut next_state: ResMut<NextState<MainState>>,
 ) {
-    button_interaction(q_button.single_mut(), || next_state.set(MainState::Settings));
+    button_interaction(q_button.single_mut(), || {
+        next_state.set(MainState::Settings)
+    });
 }
 fn handle_exit_button(
     mut q_button: Query<(&Interaction, &mut BackgroundColor), With<ExitButton>>,

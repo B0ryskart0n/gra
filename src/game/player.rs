@@ -91,15 +91,26 @@ pub fn handle_input(
     Ok(())
 }
 pub fn visual_state(mut query: Query<(&mut Sprite, &PlayerState), Changed<PlayerState>>) {
-    query.iter_mut().for_each(|(mut sprite, state)| match *state {
-        PlayerState::Idle => sprite.color = Color::srgb(0.1, 1.0, 0.1),
-        PlayerState::Attacking => sprite.color = Color::srgb(1.0, 0.1, 0.1),
-        PlayerState::Dashing(_) => sprite.color = Color::srgb(0.1, 0.1, 1.0),
-    })
+    query
+        .iter_mut()
+        .for_each(|(mut sprite, state)| match *state {
+            PlayerState::Idle => sprite.color = Color::srgb(0.1, 1.0, 0.1),
+            PlayerState::Attacking => sprite.color = Color::srgb(1.0, 0.1, 0.1),
+            PlayerState::Dashing(_) => sprite.color = Color::srgb(0.1, 0.1, 1.0),
+        })
 }
 pub fn handle_state(
     time_fixed: Res<Time<Fixed>>,
-    mut q_player: Query<(&PlayerInput, &mut PlayerState, &mut Velocity, &mut DashTimer, &Stats), With<Player>>,
+    mut q_player: Query<
+        (
+            &PlayerInput,
+            &mut PlayerState,
+            &mut Velocity,
+            &mut DashTimer,
+            &Stats,
+        ),
+        With<Player>,
+    >,
 ) -> Result {
     let (input, mut state, mut velocity, mut dash_timer, stats) = q_player.single_mut()?;
 
@@ -129,7 +140,10 @@ pub fn handle_state(
 }
 pub fn hit(
     q_enemies: Query<&GlobalTransform, With<Enemy>>,
-    mut q_player: Query<(&mut Health, &GlobalTransform, &PlayerState), (With<Player>, Without<Enemy>)>,
+    mut q_player: Query<
+        (&mut Health, &GlobalTransform, &PlayerState),
+        (With<Player>, Without<Enemy>),
+    >,
     mut death_events: EventWriter<PlayerDeath>,
 ) -> Result {
     let (mut player_health, player_transform, player_state) = q_player.single_mut()?;

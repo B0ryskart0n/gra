@@ -17,8 +17,11 @@ fn main() {
                 .set(WindowPlugin {
                     primary_window: Some(Window {
                         decorations: false,
-                        resolution: WindowResolution::new(LOGICAL_WIDTH as f32 * SCALE, LOGICAL_HEIGHT as f32 * SCALE)
-                            .with_scale_factor_override(SCALE),
+                        resolution: WindowResolution::new(
+                            LOGICAL_WIDTH as f32 * SCALE,
+                            LOGICAL_HEIGHT as f32 * SCALE,
+                        )
+                        .with_scale_factor_override(SCALE),
                         ..Default::default()
                     }),
                     ..Default::default()

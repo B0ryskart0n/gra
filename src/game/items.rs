@@ -22,7 +22,13 @@ pub fn pickup(
     // Finds the closest item within the `INTERACTION_DISTANCE` and picks it up.
     q_items
         .iter()
-        .map(|(e, item, pos)| (e, item, player_pos.translation().distance(pos.translation())))
+        .map(|(e, item, pos)| {
+            (
+                e,
+                item,
+                player_pos.translation().distance(pos.translation()),
+            )
+        })
         .filter(|(_, _, distance)| *distance < INTERACTION_DISTANCE)
         .min_by(|(_, _, x), (_, _, y)| x.partial_cmp(y).unwrap_or(Ordering::Equal))
         .map(|(entity, item, _)| {

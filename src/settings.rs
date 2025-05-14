@@ -94,19 +94,28 @@ fn update_text_res(
     q_resolution.single_mut()?.0 = user_settings.window.res_str();
     Ok(())
 }
-fn handle_keyboard(keyboard: Res<ButtonInput<KeyCode>>, mut next_state: ResMut<NextState<MainState>>) {
+fn handle_keyboard(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut next_state: ResMut<NextState<MainState>>,
+) {
     if keyboard.just_pressed(KeyCode::Escape) {
         next_state.set(MainState::Menu);
     }
 }
 fn handle_menu_button(
-    mut q_button: Query<(&Interaction, &mut BackgroundColor), (With<MenuButton>, Changed<Interaction>)>,
+    mut q_button: Query<
+        (&Interaction, &mut BackgroundColor),
+        (With<MenuButton>, Changed<Interaction>),
+    >,
     mut next_state: ResMut<NextState<MainState>>,
 ) {
     button_interaction(q_button.single_mut(), || next_state.set(MainState::Menu));
 }
 fn handle_apply_button(
-    mut q_button: Query<(&Interaction, &mut BackgroundColor), (With<ApplyButton>, Changed<Interaction>)>,
+    mut q_button: Query<
+        (&Interaction, &mut BackgroundColor),
+        (With<ApplyButton>, Changed<Interaction>),
+    >,
     mut q_window: Query<&mut Window>,
     user_settings: Res<UserSettings>,
 ) -> Result {
@@ -120,13 +129,19 @@ fn handle_apply_button(
     Ok(())
 }
 fn handle_resolution_button(
-    mut q_button: Query<(&Interaction, &mut BackgroundColor), (With<ResolutionButton>, Changed<Interaction>)>,
+    mut q_button: Query<
+        (&Interaction, &mut BackgroundColor),
+        (With<ResolutionButton>, Changed<Interaction>),
+    >,
     mut user_settings: ResMut<UserSettings>,
 ) {
     button_interaction(q_button.single_mut(), || user_settings.window.cycle_res());
 }
 fn handle_window_mode_button(
-    mut q_button: Query<(&Interaction, &mut BackgroundColor), (With<WindowModeButton>, Changed<Interaction>)>,
+    mut q_button: Query<
+        (&Interaction, &mut BackgroundColor),
+        (With<WindowModeButton>, Changed<Interaction>),
+    >,
     mut user_settings: ResMut<UserSettings>,
 ) {
     button_interaction(q_button.single_mut(), || user_settings.window.cycle_mode());
@@ -155,7 +170,9 @@ impl WindowSettings {
         match self {
             Self::Windowed(_) => WindowMode::Windowed,
             Self::Borderless => WindowMode::BorderlessFullscreen(MonitorSelection::Current),
-            Self::Fullscreen => WindowMode::Fullscreen(MonitorSelection::Current, VideoModeSelection::Current),
+            Self::Fullscreen => {
+                WindowMode::Fullscreen(MonitorSelection::Current, VideoModeSelection::Current)
+            }
         }
     }
     fn to_bevy_res(&self) -> WindowResolution {
