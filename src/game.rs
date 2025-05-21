@@ -28,17 +28,13 @@ const PLAYER_HEALTH: f32 = 100.0;
 
 pub fn game_plugin(app: &mut App) {
     app.add_sub_state::<GameSubState>()
-        // Since I want to rely on `resource_changed` condition I need to initiate
-        // those resources at the top level instead of `OnEnter(GameState::Game)`.
-        .init_resource::<EnemySpawn>()
         .add_state_scoped_event::<PlayerDeath>(MainState::Game)
         .add_state_scoped_event::<ItemPickup>(MainState::Game)
         .add_systems(
             OnEnter(MainState::Game),
             (
                 utils::reset_camera,
-                stages::stage0,
-                items::spawn,
+                stages::stage1,
                 player::spawn,
                 hud::spawn,
                 pause::spawn_invisible_overlay,
@@ -127,11 +123,11 @@ struct ItemPickup;
 #[derive(Event, Default)]
 struct PlayerDeath;
 
-#[derive(Resource)]
-struct EnemySpawn(Timer);
-impl Default for EnemySpawn {
+#[derive(Component)]
+struct EnemySpawner(Timer);
+impl Default for EnemySpawner {
     fn default() -> Self {
-        EnemySpawn(Timer::from_seconds(
+        EnemySpawner(Timer::from_seconds(
             ENEMY_SPAWN_INTERVAL,
             TimerMode::Repeating,
         ))

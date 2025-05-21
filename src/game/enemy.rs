@@ -2,29 +2,34 @@ use super::ENEMY_HEALTH;
 use super::ENEMY_SIZE;
 use super::ENEMY_SPEED;
 use super::Enemy;
-use super::EnemySpawn;
+use super::EnemySpawner;
 use super::Health;
 use super::Player;
 use super::Projectile;
 use super::Velocity;
-use crate::MainState;
 use crate::utils::*;
 use bevy::prelude::*;
 
-pub fn spawn(time: Res<Time<Fixed>>, mut commands: Commands, mut enemy_spawn: ResMut<EnemySpawn>) {
-    if enemy_spawn.0.tick(time.delta()).finished() {
-        commands.spawn((
-            Enemy,
-            Health(ENEMY_HEALTH),
-            Velocity(Vec3::ZERO),
-            Sprite::from_color(
-                Color::srgb(1.0, 0.0, 0.6),
-                Vec2::from((ENEMY_SIZE, ENEMY_SIZE)),
-            ),
-            Transform::from_translation(Vec3::from((320.0, 180.0, 0.5))),
-            StateScoped(MainState::Game),
-        ));
-    }
+pub fn spawn(
+    time: Res<Time<Fixed>>,
+    mut commands: Commands,
+    mut q_spawners: Query<(Entity, &mut EnemySpawner)>,
+) {
+    q_spawners.iter_mut().for_each(|(parent, mut timer)| {
+        if timer.0.tick(time.delta()).finished() {
+            commands.spawn((
+                Enemy,
+                Health(ENEMY_HEALTH),
+                Velocity(Vec3::ZERO),
+                Sprite::from_color(
+                    Color::srgb(1.0, 0.0, 0.6),
+                    Vec2::from((ENEMY_SIZE, ENEMY_SIZE)),
+                ),
+                Transform::from_translation(Vec3::from((320.0, 180.0, 0.5))),
+                ChildOf(parent),
+            ));
+        }
+    });
 }
 pub fn handle_state(
     mut q_enemies: Query<(&GlobalTransform, &mut Velocity), With<Enemy>>,
