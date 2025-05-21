@@ -1,15 +1,29 @@
 use super::*;
 use bevy::prelude::*;
 
-pub fn stage0(mut commands: Commands) {
-    commands.spawn((
-        Stage(0),
-        Sprite::from_color(Color::srgb(0.4, 0.4, 0.4), Vec2::from((200.0, 200.0))),
-        StateScoped(MainState::Game),
-    ));
+pub fn stage0(q_stages: Query<Entity, With<Stage>>, mut commands: Commands) {
+    // Make sure that there is one stage at a time.
+    q_stages.iter().for_each(|stage| {
+        commands.entity(stage).despawn();
+    });
+    commands
+        .spawn((
+            Stage(0),
+            Sprite::from_color(Color::srgb(0.4, 0.4, 0.4), Vec2::splat(200.0)),
+            StateScoped(MainState::Game),
+        ))
+        .with_child((Door(1), Sprite::from_color(Color::BLACK, Vec2::splat(20.0))));
 }
 
-pub fn stage1(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn stage1(
+    q_stages: Query<Entity, With<Stage>>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+) {
+    // Make sure that there is one stage at a time.
+    q_stages.iter().for_each(|stage| {
+        commands.entity(stage).despawn();
+    });
     commands
         .spawn((
             Stage(1),
@@ -20,12 +34,30 @@ pub fn stage1(mut commands: Commands, asset_server: Res<AssetServer>) {
         .with_children(|parent| {
             parent.spawn((
                 Item::Banana,
-                Sprite::from_image(asset_server.load("banana.png")),
+                Sprite::from_image(Item::Banana.image(&asset_server)),
                 Transform::from_translation(Vec3::from((100.0, -100.0, 0.4))),
             ));
         });
 }
+pub fn door_interaction(
+    q_door: Query<(&GlobalTransform, &Door)>,
+    q_player: Query<&GlobalTransform, With<Player>>,
+    mut change_stage: EventWriter<ChangeStage>,
+) -> Result {
+    let (door_pos, door) = q_door.single()?;
+    let player_pos = q_player.single()?;
+
+    if player_pos.translation().distance(door_pos.translation()) <= 10.0 {
+        change_stage.write(ChangeStage(door.0));
+    }
+
+    Ok(())
+}
 
 #[derive(Component)]
 #[allow(dead_code)]
-struct Stage(u8);
+pub struct Stage(u8);
+
+/// Door to a specific stage.
+#[derive(Component)]
+pub struct Door(u8);

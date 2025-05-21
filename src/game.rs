@@ -30,11 +30,12 @@ pub fn game_plugin(app: &mut App) {
     app.add_sub_state::<GameSubState>()
         .add_state_scoped_event::<PlayerDeath>(MainState::Game)
         .add_state_scoped_event::<ItemPickup>(MainState::Game)
+        .add_state_scoped_event::<ChangeStage>(MainState::Game)
         .add_systems(
             OnEnter(MainState::Game),
             (
                 utils::reset_camera,
-                stages::stage1,
+                stages::stage0,
                 player::spawn,
                 hud::spawn,
                 pause::spawn_invisible_overlay,
@@ -61,11 +62,14 @@ pub fn game_plugin(app: &mut App) {
         .add_systems(
             Update,
             (
+                // Add handling for different stages
+                stages::stage1.run_if(on_event::<ChangeStage>),
                 pause::toggle.run_if(input_just_pressed(KeyCode::Escape)),
                 player::visual_state,
                 update_camera,
                 exit_game.run_if(input_just_pressed(KeyCode::F4).or(on_event::<PlayerDeath>)),
                 player::update_stats.run_if(on_event::<ItemPickup>),
+                stages::door_interaction.run_if(input_just_pressed(KeyCode::KeyE)),
                 items::pickup.run_if(input_just_pressed(KeyCode::KeyE)),
                 hud::update_health,
                 hud::update_equipment.run_if(on_event::<ItemPickup>),
@@ -122,6 +126,9 @@ struct ItemPickup;
 
 #[derive(Event, Default)]
 struct PlayerDeath;
+
+#[derive(Event)]
+struct ChangeStage(u8);
 
 #[derive(Component)]
 struct EnemySpawner(Timer);
