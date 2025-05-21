@@ -39,6 +39,7 @@ pub fn stage1(
             ));
         });
 }
+// TODO Maybe create common logic for general interaction, regardless of door/item
 pub fn door_interaction(
     q_door: Query<(&GlobalTransform, &Door)>,
     q_player: Query<&GlobalTransform, With<Player>>,

@@ -62,7 +62,7 @@ pub fn game_plugin(app: &mut App) {
         .add_systems(
             Update,
             (
-                // Add handling for different stages
+                // TODO Add handling for different stages
                 stages::stage1.run_if(on_event::<ChangeStage>),
                 pause::toggle.run_if(input_just_pressed(KeyCode::Escape)),
                 player::visual_state,
