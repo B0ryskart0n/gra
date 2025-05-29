@@ -4,6 +4,12 @@ use std::cmp::Ordering;
 
 const INTERACTION_DISTANCE: f32 = 30.0;
 
+// TODO
+// In case of many interactables later in the game development pressing E might cause stagger,
+// which might be suboptimal.
+// Consider not analysing all interactables when button pressed, but rather
+// periodically (doesn't have to be each frame) keep track of all entities that are potentially
+// to be interacted with and pressing E will just use that list.
 pub fn pickup(
     mut commands: Commands,
     mut q_player: Query<(&GlobalTransform, &mut Equipment), With<Player>>,

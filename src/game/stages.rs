@@ -45,12 +45,14 @@ pub fn door_interaction(
     q_player: Query<&GlobalTransform, With<Player>>,
     mut change_stage: EventWriter<ChangeStage>,
 ) -> Result {
-    let (door_pos, door) = q_door.single()?;
     let player_pos = q_player.single()?;
 
-    if player_pos.translation().distance(door_pos.translation()) <= 10.0 {
-        change_stage.write(ChangeStage(door.0));
-    }
+    // Copied from item pickup function just to solve the issue of clicking E with no Doors.
+    q_door.iter().for_each(|(door_pos, door)| {
+        if player_pos.translation().distance(door_pos.translation()) <= 10.0 {
+            change_stage.write(ChangeStage(door.0));
+        }
+    });
 
     Ok(())
 }
