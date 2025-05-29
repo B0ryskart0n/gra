@@ -8,7 +8,7 @@ pub fn stage0(q_stages: Query<Entity, With<Stage>>, mut commands: Commands) {
     });
     commands
         .spawn((
-            Stage(0),
+            Stage,
             Sprite::from_color(Color::srgb(0.4, 0.4, 0.4), Vec2::splat(200.0)),
             StateScoped(MainState::Game),
         ))
@@ -26,7 +26,7 @@ pub fn stage1(
     });
     commands
         .spawn((
-            Stage(1),
+            Stage,
             Sprite::from_color(Color::srgb(0.4, 0.4, 0.4), Vec2::from((400.0, 300.0))),
             EnemySpawner::default(),
             StateScoped(MainState::Game),
@@ -58,8 +58,7 @@ pub fn door_interaction(
 }
 
 #[derive(Component)]
-#[allow(dead_code)]
-pub struct Stage(u8);
+pub struct Stage;
 
 /// Door to a specific stage.
 #[derive(Component)]
