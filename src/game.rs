@@ -62,7 +62,6 @@ pub fn game_plugin(app: &mut App) {
         .add_systems(
             Update,
             (
-                // TODO Add handling for different stages
                 stages::stage1.run_if(on_event::<ChangeStage>),
                 pause::toggle.run_if(input_just_pressed(KeyCode::Escape)),
                 player::visual_state,
@@ -127,6 +126,8 @@ struct ItemPickup;
 #[derive(Event, Default)]
 struct PlayerDeath;
 
+#[allow(dead_code)]
+// TODO Add handling for different stages
 #[derive(Event)]
 struct ChangeStage(u8);
 
