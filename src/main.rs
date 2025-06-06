@@ -32,7 +32,10 @@ fn main() {
         .init_state::<MainState>() // Initial state will be the #[default]
         .init_resource::<CursorPosition>()
         .add_systems(Startup, spawn_camera)
-        .add_systems(Update, update_cursor_position)
+        .add_systems(
+            RunFixedMainLoop,
+            update_cursor_position.in_set(RunFixedMainLoopSystem::BeforeFixedMainLoop),
+        )
         .add_plugins(splash::splash_plugin)
         .add_plugins(menu::menu_plugin)
         .add_plugins(settings::plugin)

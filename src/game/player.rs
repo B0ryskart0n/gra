@@ -6,6 +6,7 @@ use bevy::prelude::*;
 use std::f32::consts::FRAC_1_SQRT_2;
 use std::time::Duration;
 
+const INITIAL_ORIENTATION: Vec2 = Vec2::Y;
 const PROJECTILE_SIZE: f32 = 2.0;
 const PROJECTILE_LIFETIME: f32 = 1.0;
 const PROJECTILE_SPEED: f32 = 400.0;
@@ -101,18 +102,26 @@ pub fn visual_state(mut query: Query<(&mut Sprite, &PlayerState), Changed<Player
 }
 pub fn handle_state(
     time_fixed: Res<Time<Fixed>>,
+    cursor_position: Res<CursorPosition>,
     mut q_player: Query<
         (
             &PlayerInput,
             &mut PlayerState,
             &mut Velocity,
             &mut DashTimer,
+            &mut Transform,
             &Stats,
         ),
         With<Player>,
     >,
 ) -> Result {
-    let (input, mut state, mut velocity, mut dash_timer, stats) = q_player.single_mut()?;
+    let (input, mut state, mut velocity, mut dash_timer, mut transform, stats) =
+        q_player.single_mut()?;
+
+    if let Some(cursor) = cursor_position.0 {
+        let cursor_direction = (transform.translation.xy() - cursor).normalize();
+        transform.rotation = Quat::from_rotation_arc_2d(INITIAL_ORIENTATION, cursor_direction);
+    }
 
     let dt = time_fixed.delta();
 
