@@ -10,29 +10,25 @@ const INITIAL_ORIENTATION: Vec2 = Vec2::Y;
 const PROJECTILE_SIZE: f32 = 2.0;
 const PROJECTILE_LIFETIME: f32 = 1.0;
 const PROJECTILE_SPEED: f32 = 400.0;
-const DIRECTION_RIGHT: Vec3 = Vec3::X;
-const DIRECTION_UPRIGHT: Vec3 = Vec3 {
+const DIRECTION_RIGHT: Vec2 = Vec2::X;
+const DIRECTION_UPRIGHT: Vec2 = Vec2 {
     x: FRAC_1_SQRT_2,
     y: FRAC_1_SQRT_2,
-    z: 0.0,
 };
-const DIRECTION_UP: Vec3 = Vec3::Y;
-const DIRECTION_UPLEFT: Vec3 = Vec3 {
+const DIRECTION_UP: Vec2 = Vec2::Y;
+const DIRECTION_UPLEFT: Vec2 = Vec2 {
     x: -FRAC_1_SQRT_2,
     y: FRAC_1_SQRT_2,
-    z: 0.0,
 };
-const DIRECTION_LEFT: Vec3 = Vec3::NEG_X;
-const DIRECTION_DOWNLEFT: Vec3 = Vec3 {
+const DIRECTION_LEFT: Vec2 = Vec2::NEG_X;
+const DIRECTION_DOWNLEFT: Vec2 = Vec2 {
     x: -FRAC_1_SQRT_2,
     y: -FRAC_1_SQRT_2,
-    z: 0.0,
 };
-const DIRECTION_DOWN: Vec3 = Vec3::NEG_Y;
-const DIRECTION_DOWNRIGHT: Vec3 = Vec3 {
+const DIRECTION_DOWN: Vec2 = Vec2::NEG_Y;
+const DIRECTION_DOWNRIGHT: Vec2 = Vec2 {
     x: FRAC_1_SQRT_2,
     y: -FRAC_1_SQRT_2,
-    z: 0.0,
 };
 
 pub fn spawn(mut commands: Commands) {
@@ -47,7 +43,7 @@ pub fn spawn(mut commands: Commands) {
         Sprite::from_color(Color::WHITE, Vec2::from((PLAYER_SIZE, PLAYER_SIZE))),
         PlayerState::default(),
         Transform::from_translation(Vec3::from((0.0, 0.0, 1.0))),
-        Velocity(Vec3::ZERO),
+        Velocity(Vec2::ZERO),
         StateScoped(MainState::Game),
     ));
 }
@@ -76,7 +72,7 @@ pub fn handle_input(
         (false, false, false, false)
         | (true, true, true, true)
         | (true, true, false, false)
-        | (false, false, true, true) => Vec3::ZERO,
+        | (false, false, true, true) => Vec2::ZERO,
         (false, true, false, false) | (false, true, true, true) => DIRECTION_RIGHT,
         (false, true, false, true) => DIRECTION_UPRIGHT,
         (false, false, false, true) | (true, true, false, true) => DIRECTION_UP,
@@ -195,9 +191,11 @@ pub fn attack(
             Projectile,
             Sprite::from_color(Color::WHITE, Vec2::from((PROJECTILE_SIZE, PROJECTILE_SIZE))),
             Transform::from_translation(player_position),
-            Velocity(Vec3::lerp(
-                Vec3::ZERO,
-                (cursor_position.0.unwrap_or(Vec2::X).extend(0.0) - player_position).normalize(),
+            // TODO Simplify
+            Velocity(Vec2::lerp(
+                Vec2::ZERO,
+                (cursor_position.0.unwrap_or(INITIAL_ORIENTATION) - player_position.xy())
+                    .normalize(),
                 PROJECTILE_SPEED,
             )),
             StateScoped(MainState::Game),

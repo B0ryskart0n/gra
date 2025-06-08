@@ -20,7 +20,7 @@ pub fn spawn(
             commands.spawn((
                 Enemy,
                 Health(ENEMY_HEALTH),
-                Velocity(Vec3::ZERO),
+                Velocity(Vec2::ZERO),
                 Sprite::from_color(
                     Color::srgb(1.0, 0.0, 0.6),
                     Vec2::from((ENEMY_SIZE, ENEMY_SIZE)),
@@ -37,7 +37,7 @@ pub fn handle_state(
 ) -> Result {
     let player_pos = q_player.single()?.translation();
     q_enemies.iter_mut().for_each(|(t, mut v)| {
-        v.0 = ENEMY_SPEED * (player_pos - t.translation()).normalize_or_zero()
+        v.0 = ENEMY_SPEED * (player_pos - t.translation()).xy().normalize_or_zero()
     });
 
     Ok(())

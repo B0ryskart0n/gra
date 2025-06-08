@@ -81,9 +81,9 @@ fn exit_game(mut next_state: ResMut<NextState<MainState>>) {
     next_state.set(MainState::Menu);
 }
 fn physics(time_fixed: Res<Time<Fixed>>, mut query: Query<(&mut Transform, &Velocity)>) {
-    query
-        .iter_mut()
-        .for_each(|(mut transform, vel)| transform.translation += vel.0 * time_fixed.delta_secs());
+    query.iter_mut().for_each(|(mut transform, vel)| {
+        transform.translation += vel.0.extend(0.0) * time_fixed.delta_secs()
+    });
 }
 fn update_camera(
     time: Res<Time>,
@@ -143,7 +143,7 @@ impl Default for EnemySpawner {
 }
 
 #[derive(Component)]
-struct Velocity(Vec3);
+struct Velocity(Vec2);
 
 #[derive(Component)]
 struct Health(f32);
@@ -161,12 +161,12 @@ struct Enemy;
 enum PlayerState {
     #[default]
     Idle,
-    Dashing(Vec3),
+    Dashing(Vec2),
     Attacking,
 }
 impl PlayerState {
     fn is_dashing(&self) -> bool {
-        discriminant(self) == discriminant(&PlayerState::Dashing(Vec3::ZERO))
+        discriminant(self) == discriminant(&PlayerState::Dashing(Vec2::ZERO))
     }
 }
 
@@ -241,7 +241,7 @@ impl Item {
 
 #[derive(Component, Default)]
 struct PlayerInput {
-    direction: Vec3,
+    direction: Vec2,
     dash: bool,
     attack: bool,
 }
