@@ -191,13 +191,11 @@ pub fn attack(
             Projectile,
             Sprite::from_color(Color::WHITE, Vec2::from((PROJECTILE_SIZE, PROJECTILE_SIZE))),
             Transform::from_translation(player_position),
-            // TODO Simplify
-            Velocity(Vec2::lerp(
-                Vec2::ZERO,
-                (cursor_position.0.unwrap_or(INITIAL_ORIENTATION) - player_position.xy())
-                    .normalize(),
-                PROJECTILE_SPEED,
-            )),
+            Velocity(
+                PROJECTILE_SPEED
+                    * (cursor_position.0.unwrap_or(INITIAL_ORIENTATION) - player_position.xy())
+                        .normalize_or_zero(),
+            ),
             StateScoped(MainState::Game),
             Lifetime(Timer::from_seconds(PROJECTILE_LIFETIME, TimerMode::Once)),
         ));
