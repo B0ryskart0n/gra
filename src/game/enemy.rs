@@ -1,12 +1,4 @@
-use super::ENEMY_HEALTH;
-use super::ENEMY_SIZE;
-use super::ENEMY_SPEED;
-use super::Enemy;
-use super::EnemySpawner;
-use super::Health;
-use super::Player;
-use super::Projectile;
-use super::Velocity;
+use super::*;
 use crate::utils::*;
 use bevy::prelude::*;
 
@@ -32,13 +24,19 @@ pub fn spawn(
     });
 }
 pub fn handle_state(
-    mut q_enemies: Query<(&GlobalTransform, &mut Velocity), With<Enemy>>,
+    mut q_enemies: Query<(&GlobalTransform, &mut Transform, &mut Velocity), With<Enemy>>,
     q_player: Query<&GlobalTransform, (With<Player>, Without<Enemy>)>,
 ) -> Result {
     let player_pos = q_player.single()?.translation();
-    q_enemies.iter_mut().for_each(|(t, mut v)| {
-        v.0 = ENEMY_SPEED * (player_pos - t.translation()).xy().normalize_or_zero()
-    });
+    q_enemies
+        .iter_mut()
+        .for_each(|(global_transform, mut transform, mut v)| {
+            let towards_player = (player_pos - global_transform.translation())
+                .xy()
+                .normalize_or_zero();
+            transform.rotation = Quat::from_rotation_arc_2d(SPRITE_ORIENTATION, towards_player);
+            v.0 = ENEMY_SPEED * towards_player;
+        });
 
     Ok(())
 }

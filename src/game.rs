@@ -13,6 +13,7 @@ use bevy::prelude::*;
 use std::collections::HashMap;
 use std::mem::discriminant;
 
+const SPRITE_ORIENTATION: Vec2 = Vec2::Y;
 const DASH_TIME: f32 = 0.4;
 const ENEMY_SPAWN_INTERVAL: f32 = 5.0;
 const ENEMY_SIZE: f32 = 15.0;

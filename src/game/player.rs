@@ -6,7 +6,6 @@ use bevy::prelude::*;
 use std::f32::consts::FRAC_1_SQRT_2;
 use std::time::Duration;
 
-const INITIAL_ORIENTATION: Vec2 = Vec2::Y;
 const PROJECTILE_SIZE: f32 = 2.0;
 const PROJECTILE_LIFETIME: f32 = 1.0;
 const PROJECTILE_SPEED: f32 = 400.0;
@@ -116,7 +115,7 @@ pub fn handle_state(
 
     if let Some(cursor) = cursor_position.0 {
         let cursor_direction = (transform.translation.xy() - cursor).normalize();
-        transform.rotation = Quat::from_rotation_arc_2d(INITIAL_ORIENTATION, cursor_direction);
+        transform.rotation = Quat::from_rotation_arc_2d(SPRITE_ORIENTATION, cursor_direction);
     }
 
     let dt = time_fixed.delta();
@@ -193,7 +192,7 @@ pub fn attack(
             Transform::from_translation(player_position),
             Velocity(
                 PROJECTILE_SPEED
-                    * (cursor_position.0.unwrap_or(INITIAL_ORIENTATION) - player_position.xy())
+                    * (cursor_position.0.unwrap_or(SPRITE_ORIENTATION) - player_position.xy())
                         .normalize_or_zero(),
             ),
             StateScoped(MainState::Game),
