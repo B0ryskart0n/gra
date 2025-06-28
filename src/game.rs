@@ -69,6 +69,7 @@ pub fn game_plugin(app: &mut App) {
                 pause::toggle.run_if(input_just_pressed(KeyCode::Escape)),
                 player::visual_state,
                 update_camera,
+                update_run,
                 exit_game.run_if(input_just_pressed(KeyCode::F4).or(on_event::<PlayerDeath>)),
                 player::update_stats.run_if(on_event::<ItemPickup>),
                 stages::door_interaction.run_if(input_just_pressed(KeyCode::KeyE)),
@@ -82,6 +83,10 @@ pub fn game_plugin(app: &mut App) {
 }
 fn run_start(mut commands: Commands) {
     commands.spawn(Run::default());
+}
+fn update_run(time: Res<Time>, mut q_run: Query<&mut Run>) -> Result {
+    q_run.single_mut()?.0.tick(time.delta());
+    Ok(())
 }
 fn exit_game(mut next_state: ResMut<NextState<MainState>>) {
     next_state.set(MainState::Menu);

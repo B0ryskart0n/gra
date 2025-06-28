@@ -64,7 +64,7 @@ pub fn update_health(
 
 pub fn update_run_time(mut q_text: Query<&mut Text, With<RunTime>>, q_run: Query<&Run>) -> Result {
     let stopwatch = q_run.single()?;
-    q_text.single_mut()?.0 = format!("{:?}", stopwatch.0.elapsed());
+    q_text.single_mut()?.0 = format!("{:.2}", stopwatch.0.elapsed_secs());
     Ok(())
 }
 
