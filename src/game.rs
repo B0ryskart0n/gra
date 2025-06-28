@@ -10,6 +10,7 @@ use super::MainState;
 use super::utils;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
+use bevy::time::Stopwatch;
 use std::collections::HashMap;
 use std::mem::discriminant;
 
@@ -35,6 +36,7 @@ pub fn game_plugin(app: &mut App) {
         .add_systems(
             OnEnter(MainState::Game),
             (
+                run_start,
                 utils::reset_camera,
                 stages::stage0,
                 player::spawn,
@@ -71,13 +73,16 @@ pub fn game_plugin(app: &mut App) {
                 player::update_stats.run_if(on_event::<ItemPickup>),
                 stages::door_interaction.run_if(input_just_pressed(KeyCode::KeyE)),
                 items::pickup.run_if(input_just_pressed(KeyCode::KeyE)),
+                hud::update_run_time,
                 hud::update_health,
                 hud::update_equipment.run_if(on_event::<ItemPickup>),
             )
                 .run_if(in_state(MainState::Game)),
         );
 }
-
+fn run_start(mut commands: Commands) {
+    commands.spawn(Run::default());
+}
 fn exit_game(mut next_state: ResMut<NextState<MainState>>) {
     next_state.set(MainState::Menu);
 }
@@ -255,3 +260,6 @@ impl Default for AttackTimer {
         AttackTimer(Timer::from_seconds(1.0, TimerMode::Once))
     }
 }
+
+#[derive(Component, Default)]
+struct Run(Stopwatch);

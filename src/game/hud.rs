@@ -7,6 +7,9 @@ use crate::MainState;
 pub struct HealthHud;
 
 #[derive(Component)]
+pub struct RunTime;
+
+#[derive(Component)]
 pub struct EquipmentNode;
 
 pub fn spawn(mut commands: Commands) {
@@ -24,22 +27,24 @@ pub fn spawn(mut commands: Commands) {
             StateScoped(MainState::Game),
         ))
         .with_children(|parent| {
-            parent.spawn((
-                Node {
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(10.0),
-                    flex_direction: FlexDirection::Row,
-                    justify_content: JustifyContent::FlexStart,
-                    ..Default::default()
-                },
-                EquipmentNode,
-            ));
             parent
                 .spawn(Node {
                     width: Val::Percent(100.0),
                     height: Val::Percent(10.0),
-                    flex_direction: FlexDirection::Column,
-                    justify_content: JustifyContent::FlexStart,
+                    flex_direction: FlexDirection::Row,
+                    justify_content: JustifyContent::SpaceBetween,
+                    ..Default::default()
+                })
+                .with_children(|parent| {
+                    parent.spawn((Node::default(), EquipmentNode));
+                    parent.spawn((Text::default(), RunTime));
+                });
+            parent
+                .spawn(Node {
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(10.0),
+                    flex_direction: FlexDirection::Row,
+                    justify_content: JustifyContent::SpaceBetween,
                     ..Default::default()
                 })
                 .with_children(|parent| {
@@ -54,6 +59,12 @@ pub fn update_health(
 ) -> Result {
     let (health, stats) = q_player.single()?;
     q_health_hud.single_mut()?.0 = format!("{}/{}", health.0, stats.max_health);
+    Ok(())
+}
+
+pub fn update_run_time(mut q_text: Query<&mut Text, With<RunTime>>, q_run: Query<&Run>) -> Result {
+    let stopwatch = q_run.single()?;
+    q_text.single_mut()?.0 = format!("{:?}", stopwatch.0.elapsed());
     Ok(())
 }
 
