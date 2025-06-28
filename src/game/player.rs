@@ -4,7 +4,6 @@ use crate::MainState;
 use crate::utils::*;
 use bevy::prelude::*;
 use std::f32::consts::FRAC_1_SQRT_2;
-use std::time::Duration;
 
 const PROJECTILE_SIZE: f32 = 2.0;
 const PROJECTILE_LIFETIME: f32 = 1.0;
@@ -183,7 +182,7 @@ pub fn attack(
     let (mut attack_timer, player_transform, player_state, stats) = q_player.single_mut()?;
     let player_position = player_transform.translation();
 
-    attack_timer.tick(Duration::mul_f32(time_fixed.delta(), stats.attack_speed));
+    attack_timer.tick(time_fixed.delta().mul_f32(stats.attack_speed));
 
     if *player_state == PlayerState::Attacking && attack_timer.0.finished() {
         commands.spawn((
@@ -196,7 +195,7 @@ pub fn attack(
                         .normalize_or_zero(),
             ),
             StateScoped(MainState::Game),
-            Lifetime(Timer::from_seconds(PROJECTILE_LIFETIME, TimerMode::Once)),
+            Lifetime::new(PROJECTILE_LIFETIME),
         ));
         attack_timer.0.reset();
     }

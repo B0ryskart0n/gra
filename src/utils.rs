@@ -22,6 +22,11 @@ pub fn square_collide(pos_a: Vec3, size_a: f32, pos_b: Vec3, size_b: f32) -> boo
 
 #[derive(Component)]
 pub struct Lifetime(pub Timer);
+impl Lifetime {
+    pub fn new(seconds: f32) -> Self {
+        Lifetime(Timer::from_seconds(seconds, TimerMode::Once))
+    }
+}
 
 pub fn lifetime(
     time: Res<Time>,
