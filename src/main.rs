@@ -14,6 +14,8 @@ fn main() {
     App::new()
         .add_plugins(
             DefaultPlugins
+                .set(ImagePlugin::default_nearest())
+                // TODO Move to settings plugin
                 .set(WindowPlugin {
                     primary_window: Some(Window {
                         decorations: false,
@@ -25,10 +27,10 @@ fn main() {
                         ..Default::default()
                     }),
                     ..Default::default()
-                })
-                .set(ImagePlugin::default_nearest()),
+                }),
         )
-        // Needs to be done after DefaultPlugins, because DefaultPlugins initializes StateTransitions
+        // .add_plugins(bevy::dev_tools::fps_overlay::FpsOverlayPlugin::default())
+        // Needs to be done after StatesPlugin (part of DefaultPlugins)
         .init_state::<MainState>() // Initial state will be the #[default]
         .init_resource::<CursorPosition>()
         .add_systems(Startup, spawn_camera)
@@ -40,8 +42,6 @@ fn main() {
         .add_plugins(menu::menu_plugin)
         .add_plugins(settings::plugin)
         .add_plugins(game::game_plugin)
-        // Needs features = [ "bevy_dev_tools" ]
-        // .add_plugins(bevy::dev_tools::fps_overlay::FpsOverlayPlugin::default())
         .run();
 }
 
