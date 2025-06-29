@@ -101,17 +101,18 @@ fn update_camera(
     cursor_position: Res<CursorPosition>,
     mut camera_query: Query<(&mut Transform, &GlobalTransform), With<Camera2d>>,
     // the Without<Camera2d> is required because both query Transform
-    player_transform: Single<&Transform, (With<Player>, Without<Camera2d>)>,
+    q_player: Query<&Transform, (With<Player>, Without<Camera2d>)>,
 ) -> Result {
     let (mut camera_transform, camera_global_transform) = camera_query.single_mut()?;
+    let player = q_player.single()?;
 
     let camera_goal = match cursor_position.0 {
         // in case of no cursor on the screen just follow the player
-        None => player_transform.translation,
+        None => player.translation,
         Some(cursor_position) => {
             // calculate vector from camera to cursor and add that to player
             let direction = cursor_position.extend(0.0) - camera_global_transform.translation();
-            player_transform.translation + CURSOR_CAMERA_INFLUENCE * direction
+            player.translation + CURSOR_CAMERA_INFLUENCE * direction
         }
     }
     .with_z(camera_global_transform.translation().z);
