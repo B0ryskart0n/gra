@@ -82,7 +82,7 @@ pub fn game_plugin(app: &mut App) {
         );
 }
 fn run_start(mut commands: Commands) {
-    commands.spawn(Run::default());
+    commands.spawn((Run::default(), StateScoped(MainState::Game)));
 }
 fn update_run(time: Res<Time>, mut q_run: Query<&mut Run>) -> Result {
     q_run.single_mut()?.0.tick(time.delta());
