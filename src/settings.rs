@@ -5,12 +5,12 @@ use bevy::prelude::*;
 use bevy::window::WindowMode;
 use bevy::window::WindowResolution;
 
-pub const LOGICAL_WIDTH: u16 = 640;
-pub const LOGICAL_HEIGHT: u16 = 360;
-pub const SCALE: f32 = 2.0;
+const LOGICAL_WIDTH: u16 = 640;
+const LOGICAL_HEIGHT: u16 = 360;
 
 pub fn plugin(app: &mut App) {
     app.init_resource::<UserSettings>()
+        .add_systems(PreStartup, startup_window_settings)
         .add_systems(OnEnter(MainState::Settings), setup_ui)
         .add_systems(
             Update,
@@ -25,6 +25,16 @@ pub fn plugin(app: &mut App) {
             )
                 .run_if(in_state(MainState::Settings)),
         );
+}
+
+fn startup_window_settings(
+    mut q_window: Query<&mut Window>,
+    settings: Res<UserSettings>,
+) -> Result {
+    let mut window = q_window.single_mut()?;
+    window.decorations = false;
+    window.resolution = settings.window.to_bevy_res();
+    Ok(())
 }
 
 fn setup_ui(mut commands: Commands) {

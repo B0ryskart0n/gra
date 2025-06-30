@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy::window::WindowResolution;
 
 mod assets;
 mod game;
@@ -8,27 +7,9 @@ mod settings;
 mod splash;
 mod utils;
 
-use settings::*;
-
 fn main() {
     App::new()
-        .add_plugins(
-            DefaultPlugins
-                .set(ImagePlugin::default_nearest())
-                // TODO Move to settings plugin
-                .set(WindowPlugin {
-                    primary_window: Some(Window {
-                        decorations: false,
-                        resolution: WindowResolution::new(
-                            LOGICAL_WIDTH as f32 * SCALE,
-                            LOGICAL_HEIGHT as f32 * SCALE,
-                        )
-                        .with_scale_factor_override(SCALE),
-                        ..Default::default()
-                    }),
-                    ..Default::default()
-                }),
-        )
+        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
         // .add_plugins(bevy::dev_tools::fps_overlay::FpsOverlayPlugin::default())
         // Needs to be done after StatesPlugin (part of DefaultPlugins)
         .init_state::<MainState>() // Initial state will be the #[default]
