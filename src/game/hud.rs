@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use super::*;
 use crate::MainState;
 
-pub fn spawn(mut commands: Commands) {
+pub fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
         .spawn((
             Node {
@@ -43,10 +43,15 @@ pub fn spawn(mut commands: Commands) {
                     parent
                         .spawn((Node::default(), Skills))
                         .with_children(|parent| {
-                            parent.spawn((ImageNode::default(), SkillA));
-                            parent.spawn((ImageNode::default(), SkillB));
-                            parent.spawn((ImageNode::default(), SkillC));
-                            parent.spawn((ImageNode::default(), SkillD));
+                            // TODO Generalise depending on character. Maybe use spritesheet?
+                            parent
+                                .spawn((ImageNode::from(asset_server.load("skill_a.png")), SkillA));
+                            parent
+                                .spawn((ImageNode::from(asset_server.load("skill_b.png")), SkillB));
+                            parent
+                                .spawn((ImageNode::from(asset_server.load("skill_c.png")), SkillC));
+                            parent
+                                .spawn((ImageNode::from(asset_server.load("skill_d.png")), SkillD));
                         });
                 });
         });
