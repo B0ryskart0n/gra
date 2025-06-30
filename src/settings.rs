@@ -188,7 +188,9 @@ impl WindowSettings {
     fn to_bevy_res(&self) -> WindowResolution {
         match self {
             WindowSettings::Windowed(res) => {
-                WindowResolution::from(res.pixels()).with_scale_factor_override(res.scale())
+                let mut window_resolution = WindowResolution::from(res.pixels());
+                window_resolution.set_scale_factor(res.scale());
+                window_resolution
             }
             _ => WindowResolution::from(Resolution::FullHD.pixels())
                 .with_scale_factor_override(Resolution::FullHD.scale()),
