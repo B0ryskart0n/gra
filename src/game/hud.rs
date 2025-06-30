@@ -3,15 +3,6 @@ use bevy::prelude::*;
 use super::*;
 use crate::MainState;
 
-#[derive(Component)]
-pub struct HealthHud;
-
-#[derive(Component)]
-pub struct RunTime;
-
-#[derive(Component)]
-pub struct EquipmentNode;
-
 pub fn spawn(mut commands: Commands) {
     commands
         .spawn((
@@ -49,6 +40,14 @@ pub fn spawn(mut commands: Commands) {
                 })
                 .with_children(|parent| {
                     parent.spawn((Text::default(), HealthHud));
+                    parent
+                        .spawn((Node::default(), Skills))
+                        .with_children(|parent| {
+                            parent.spawn((ImageNode::default(), SkillA));
+                            parent.spawn((ImageNode::default(), SkillB));
+                            parent.spawn((ImageNode::default(), SkillC));
+                            parent.spawn((ImageNode::default(), SkillD));
+                        });
                 });
         });
 }
@@ -82,3 +81,21 @@ pub fn update_equipment(
         .with_children(|parent| equipment.hud_nodes(asset_server, parent));
     Ok(())
 }
+
+#[derive(Component)]
+struct Skills;
+#[derive(Component)]
+struct SkillA;
+#[derive(Component)]
+struct SkillB;
+#[derive(Component)]
+struct SkillC;
+#[derive(Component)]
+struct SkillD;
+
+#[derive(Component)]
+pub struct HealthHud;
+#[derive(Component)]
+pub struct RunTime;
+#[derive(Component)]
+pub struct EquipmentNode;
