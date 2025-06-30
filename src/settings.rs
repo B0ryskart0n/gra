@@ -121,6 +121,9 @@ fn handle_menu_button(
 ) {
     button_interaction(q_button.single_mut(), || next_state.set(MainState::Menu));
 }
+// TODO Solve with Events and handle also pressing 'Enter'.
+// TODO There is no coming back from setting the resolution too big,
+// let's introduce a mechanism to fallback to previous settings.
 fn handle_apply_button(
     mut q_button: Query<
         (&Interaction, &mut BackgroundColor),
