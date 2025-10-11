@@ -8,7 +8,7 @@ pub fn spawn(
     mut q_spawners: Query<(Entity, &mut EnemySpawner)>,
 ) {
     q_spawners.iter_mut().for_each(|(parent, mut timer)| {
-        if timer.0.tick(time.delta()).finished() {
+        if timer.0.tick(time.delta()).is_finished() {
             commands.spawn((
                 Enemy,
                 Health(ENEMY_HEALTH),

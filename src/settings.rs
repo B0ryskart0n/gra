@@ -5,8 +5,8 @@ use bevy::prelude::*;
 use bevy::window::WindowMode;
 use bevy::window::WindowResolution;
 
-const LOGICAL_WIDTH: u16 = 640;
-const LOGICAL_HEIGHT: u16 = 360;
+const LOGICAL_WIDTH: u32 = 640;
+const LOGICAL_HEIGHT: u32 = 360;
 
 pub fn plugin(app: &mut App) {
     app.init_resource::<UserSettings>()
@@ -39,7 +39,7 @@ fn startup_window_settings(
 
 fn setup_ui(mut commands: Commands) {
     commands
-        .spawn((typical_parent_node(), StateScoped(MainState::Settings)))
+        .spawn((typical_parent_node(), DespawnOnExit(MainState::Settings)))
         .with_children(|parent| {
             parent
                 .spawn(Node {
@@ -244,7 +244,7 @@ impl Resolution {
             Self::QHD => 4.0,
         }
     }
-    fn pixels(&self) -> [u16; 2] {
+    fn pixels(&self) -> [u32; 2] {
         match self {
             Self::Logical => [LOGICAL_WIDTH, LOGICAL_HEIGHT],
             Self::HD => [1280, 720],

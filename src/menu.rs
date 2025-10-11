@@ -19,7 +19,7 @@ pub fn menu_plugin(app: &mut App) {
 
 fn setup_ui(mut commands: Commands) -> Result {
     commands
-        .spawn((typical_parent_node(), StateScoped(MainState::Menu)))
+        .spawn((typical_parent_node(), DespawnOnExit(MainState::Menu)))
         .with_children(|parent| {
             parent.spawn((GameButton, Text::new("Play")));
             parent.spawn((SettingsButton, Text::new("Settings")));
@@ -60,10 +60,10 @@ fn handle_settings_button(
 }
 fn handle_exit_button(
     mut q_button: Query<(&Interaction, &mut BackgroundColor), With<ExitButton>>,
-    mut exit_events: EventWriter<AppExit>,
+    mut exit_messages: MessageWriter<AppExit>,
 ) {
     button_interaction(q_button.single_mut(), || {
-        exit_events.write_default();
+        exit_messages.write_default();
     });
 }
 

@@ -17,7 +17,7 @@ fn main() {
         .add_systems(Startup, spawn_camera)
         .add_systems(
             RunFixedMainLoop,
-            update_cursor_position.in_set(RunFixedMainLoopSystem::BeforeFixedMainLoop),
+            update_cursor_position.in_set(RunFixedMainLoopSystems::BeforeFixedMainLoop),
         )
         .add_plugins(splash::splash_plugin)
         .add_plugins(menu::menu_plugin)

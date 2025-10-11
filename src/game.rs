@@ -30,9 +30,12 @@ const PLAYER_HEALTH: f32 = 100.0;
 
 pub fn game_plugin(app: &mut App) {
     app.add_sub_state::<GameSubState>()
-        .add_state_scoped_event::<PlayerDeath>(MainState::Game)
-        .add_state_scoped_event::<ItemPickup>(MainState::Game)
-        .add_state_scoped_event::<ChangeStage>(MainState::Game)
+        .add_message::<PlayerDeath>()
+        .add_message::<ItemPickup>()
+        .add_message::<ChangeStage>()
+        .clear_messages_on_exit::<PlayerDeath>(MainState::Game)
+        .clear_messages_on_exit::<ItemPickup>(MainState::Game)
+        .clear_messages_on_exit::<ChangeStage>(MainState::Game)
         .add_systems(
             OnEnter(MainState::Game),
             (
@@ -48,7 +51,7 @@ pub fn game_plugin(app: &mut App) {
             RunFixedMainLoop,
             player::handle_input
                 .run_if(in_state(MainState::Game))
-                .in_set(RunFixedMainLoopSystem::BeforeFixedMainLoop),
+                .in_set(RunFixedMainLoopSystems::BeforeFixedMainLoop),
         )
         .add_systems(
             FixedUpdate,
@@ -65,24 +68,25 @@ pub fn game_plugin(app: &mut App) {
         .add_systems(
             Update,
             (
-                stages::stage1.run_if(on_event::<ChangeStage>),
+                // TODO Migrate to Observer systems
+                stages::stage1.run_if(on_message::<ChangeStage>),
                 pause::toggle.run_if(input_just_pressed(KeyCode::Escape)),
                 player::visual_state,
                 update_camera,
                 update_run,
-                exit_game.run_if(input_just_pressed(KeyCode::F4).or(on_event::<PlayerDeath>)),
-                player::update_stats.run_if(on_event::<ItemPickup>),
+                exit_game.run_if(input_just_pressed(KeyCode::F4).or(on_message::<PlayerDeath>)),
+                player::update_stats.run_if(on_message::<ItemPickup>),
                 stages::door_interaction.run_if(input_just_pressed(KeyCode::KeyE)),
                 items::pickup.run_if(input_just_pressed(KeyCode::KeyE)),
                 hud::update_run_time,
                 hud::update_health,
-                hud::update_equipment.run_if(on_event::<ItemPickup>),
+                hud::update_equipment.run_if(on_message::<ItemPickup>),
             )
                 .run_if(in_state(MainState::Game)),
         );
 }
 fn run_start(mut commands: Commands) {
-    commands.spawn((Run::default(), StateScoped(MainState::Game)));
+    commands.spawn((Run::default(), DespawnOnExit(MainState::Game)));
 }
 fn update_run(time: Res<Time>, mut q_run: Query<&mut Run>) -> Result {
     q_run.single_mut()?.0.tick(time.delta());
@@ -132,15 +136,15 @@ enum GameSubState {
     Paused,
 }
 
-#[derive(Event, Default)]
+#[derive(Message, Default)]
 struct ItemPickup;
 
-#[derive(Event, Default)]
+#[derive(Message, Default)]
 struct PlayerDeath;
 
 #[allow(dead_code)]
 // TODO Add handling for different stages
-#[derive(Event)]
+#[derive(Message)]
 struct ChangeStage(u8);
 
 #[derive(Component)]

@@ -35,7 +35,7 @@ pub fn spawn_invisible_overlay(mut commands: Commands) {
                 align_items: AlignItems::Center,
                 ..Node::DEFAULT
             },
-            StateScoped(MainState::Game),
+            DespawnOnExit(MainState::Game),
             BackgroundColor(Color::srgba_u8(0, 0, 0, 200)),
             Visibility::Hidden,
             PauseOverlay,

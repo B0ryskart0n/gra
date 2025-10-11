@@ -15,7 +15,7 @@ pub fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
                 align_items: AlignItems::Center,
                 ..Node::DEFAULT
             },
-            StateScoped(MainState::Game),
+            DespawnOnExit(MainState::Game),
         ))
         .with_children(|parent| {
             parent

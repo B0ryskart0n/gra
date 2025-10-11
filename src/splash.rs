@@ -13,8 +13,8 @@ struct SplashTimer(Timer);
 fn enter_splash(mut commands: Commands, _asset_server: Res<AssetServer>) {
     commands.spawn((
         Text2d::new("Splash screen"),
-        TextLayout::new_with_justify(JustifyText::Center),
-        StateScoped(MainState::Splash),
+        TextLayout::new_with_justify(Justify::Center),
+        DespawnOnExit(MainState::Splash),
     ));
     commands.insert_resource(SplashTimer(Timer::from_seconds(1.0, TimerMode::Once)));
 }
@@ -27,7 +27,7 @@ fn splash_update(
     mut next_state: ResMut<NextState<MainState>>,
     mut timer: ResMut<SplashTimer>,
 ) {
-    if timer.tick(time.delta()).finished() {
+    if timer.tick(time.delta()).is_finished() {
         next_state.set(MainState::Menu);
     }
 }

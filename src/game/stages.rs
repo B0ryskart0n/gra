@@ -10,7 +10,7 @@ pub fn stage0(q_stages: Query<Entity, With<Stage>>, mut commands: Commands) {
         .spawn((
             Stage,
             Sprite::from_color(Color::srgb(0.4, 0.4, 0.4), Vec2::splat(200.0)),
-            StateScoped(MainState::Game),
+            DespawnOnExit(MainState::Game),
         ))
         .with_child((Door(1), Sprite::from_color(Color::BLACK, Vec2::splat(20.0))));
 }
@@ -29,7 +29,7 @@ pub fn stage1(
             Stage,
             Sprite::from_color(Color::srgb(0.4, 0.4, 0.4), Vec2::from((400.0, 300.0))),
             EnemySpawner::default(),
-            StateScoped(MainState::Game),
+            DespawnOnExit(MainState::Game),
         ))
         .with_children(|parent| {
             parent.spawn((
@@ -43,14 +43,14 @@ pub fn stage1(
 pub fn door_interaction(
     q_door: Query<(&GlobalTransform, &Door)>,
     q_player: Query<&GlobalTransform, With<Player>>,
-    mut change_stage: EventWriter<ChangeStage>,
+    mut change_stage_messages: MessageWriter<ChangeStage>,
 ) -> Result {
     let player_pos = q_player.single()?;
 
     // Copied from item pickup function just to solve the issue of clicking E with no Doors.
     q_door.iter().for_each(|(door_pos, door)| {
         if player_pos.translation().distance(door_pos.translation()) <= 10.0 {
-            change_stage.write(ChangeStage(door.0));
+            change_stage_messages.write(ChangeStage(door.0));
         }
     });
 

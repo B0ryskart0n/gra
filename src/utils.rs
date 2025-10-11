@@ -35,7 +35,7 @@ pub fn lifetime(
 ) {
     let dt = time.delta();
     query.iter_mut().for_each(|(e, mut l)| {
-        if l.0.tick(dt).finished() {
+        if l.0.tick(dt).is_finished() {
             commands.entity(e).despawn()
         }
     })

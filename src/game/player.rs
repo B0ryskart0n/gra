@@ -42,7 +42,7 @@ pub fn spawn(mut commands: Commands) {
         PlayerState::default(),
         Transform::from_translation(Vec3::from((0.0, 0.0, 1.0))),
         Velocity(Vec2::ZERO),
-        StateScoped(MainState::Game),
+        DespawnOnExit(MainState::Game),
     ));
 }
 pub fn update_stats(mut q_player: Query<(&mut Stats, &Equipment)>) -> Result {
@@ -119,7 +119,7 @@ pub fn handle_state(
 
     let dt = time_fixed.delta();
 
-    if state.is_dashing() && dash_timer.0.tick(dt).finished() {
+    if state.is_dashing() && dash_timer.0.tick(dt).is_finished() {
         *state = PlayerState::Idle;
         dash_timer.0.reset();
     }
@@ -147,7 +147,7 @@ pub fn hit(
         (&mut Health, &GlobalTransform, &PlayerState),
         (With<Player>, Without<Enemy>),
     >,
-    mut death_events: EventWriter<PlayerDeath>,
+    mut death_messages: MessageWriter<PlayerDeath>,
 ) -> Result {
     let (mut player_health, player_transform, player_state) = q_player.single_mut()?;
     let damage = match *player_state {
@@ -168,7 +168,7 @@ pub fn hit(
 
     player_health.0 -= damage;
     if player_health.0 <= 0.0 {
-        death_events.write_default();
+        death_messages.write_default();
     }
 
     Ok(())
@@ -184,7 +184,7 @@ pub fn attack(
 
     attack_timer.tick(time_fixed.delta().mul_f32(stats.attack_speed));
 
-    if *player_state == PlayerState::Attacking && attack_timer.0.finished() {
+    if *player_state == PlayerState::Attacking && attack_timer.0.is_finished() {
         commands.spawn((
             Projectile,
             Sprite::from_color(Color::WHITE, Vec2::from((PROJECTILE_SIZE, PROJECTILE_SIZE))),
@@ -194,7 +194,7 @@ pub fn attack(
                     * (cursor_position.0.unwrap_or(SPRITE_ORIENTATION) - player_position.xy())
                         .normalize_or_zero(),
             ),
-            StateScoped(MainState::Game),
+            DespawnOnExit(MainState::Game),
             Lifetime::new(PROJECTILE_LIFETIME),
         ));
         attack_timer.0.reset();

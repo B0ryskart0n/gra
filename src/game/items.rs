@@ -14,7 +14,7 @@ pub fn pickup(
     mut commands: Commands,
     mut q_player: Query<(&GlobalTransform, &mut Equipment), With<Player>>,
     q_items: Query<(Entity, &Item, &GlobalTransform), Without<Player>>,
-    mut pickup_events: EventWriter<ItemPickup>,
+    mut pickup_messages: MessageWriter<ItemPickup>,
 ) -> Result {
     let (player_pos, mut equipment) = q_player.single_mut()?;
     // Finds the closest item within the `INTERACTION_DISTANCE` and picks it up.
@@ -32,7 +32,7 @@ pub fn pickup(
         .map(|(entity, item, _)| {
             equipment.pickup(item.clone());
             commands.entity(entity).despawn();
-            pickup_events.write_default();
+            pickup_messages.write_default();
         });
 
     Ok(())
