@@ -15,4 +15,4 @@ opt-level = 3
 # Since there is no option to specify profile-specific dependency features, the dynamic_linking is specified here.
 # Needs to be removed for prod builds.
 [dependencies]
-bevy = { version = "0.16", features = ["dynamic_linking"] }
+bevy = { version = "0.17", features = ["dynamic_linking"] }
