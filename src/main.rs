@@ -19,7 +19,7 @@ fn main() {
             RunFixedMainLoop,
             update_cursor_position.in_set(RunFixedMainLoopSystems::BeforeFixedMainLoop),
         )
-        .add_plugins(splash::splash_plugin)
+        .add_plugins(splash::plugin)
         .add_plugins(menu::menu_plugin)
         .add_plugins(settings::plugin)
         .add_plugins(game::game_plugin)
