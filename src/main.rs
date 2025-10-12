@@ -20,7 +20,7 @@ fn main() {
             update_cursor_position.in_set(RunFixedMainLoopSystems::BeforeFixedMainLoop),
         )
         .add_plugins(splash::plugin)
-        .add_plugins(menu::menu_plugin)
+        .add_plugins(menu::plugin)
         .add_plugins(settings::plugin)
         .add_plugins(game::game_plugin)
         .run();
@@ -55,7 +55,6 @@ enum MainState {
     #[default]
     Splash,
     Menu,
-    Settings,
     Game,
 }
 
