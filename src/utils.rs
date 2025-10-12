@@ -1,4 +1,3 @@
-use crate::PrimaryCamera;
 use bevy::prelude::*;
 
 // Generic system that takes a component as a parameter, and will despawn all entities with that component
@@ -6,11 +5,6 @@ pub fn _despawn<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: 
     for entity in &to_despawn {
         commands.entity(entity).despawn();
     }
-}
-
-pub fn reset_camera(mut q_camera: Query<&mut Transform, With<PrimaryCamera>>) -> Result {
-    q_camera.single_mut()?.translation = Vec3::ZERO;
-    Ok(())
 }
 
 pub fn square_collide(pos_a: Vec3, size_a: f32, pos_b: Vec3, size_b: f32) -> bool {

@@ -7,6 +7,7 @@ mod stages;
 
 use super::CursorPosition;
 use super::MainState;
+use super::PrimaryCamera;
 use super::utils;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
@@ -40,13 +41,15 @@ pub fn game_plugin(app: &mut App) {
             OnEnter(MainState::Game),
             (
                 run_start,
-                utils::reset_camera,
                 stages::stage0,
                 player::spawn,
                 hud::spawn,
                 pause::spawn_invisible_overlay,
             ),
         )
+        // Only game state changes the camera position so resetting camera when exiting it
+        // should solve all with camera position.
+        .add_systems(OnExit(MainState::Game), reset_camera)
         .add_systems(
             RunFixedMainLoop,
             player::handle_input
@@ -94,6 +97,10 @@ fn update_run(time: Res<Time>, mut q_run: Query<&mut Run>) -> Result {
 }
 fn exit_game(mut next_state: ResMut<NextState<MainState>>) {
     next_state.set(MainState::Menu);
+}
+fn reset_camera(mut q_camera: Query<&mut Transform, With<PrimaryCamera>>) -> Result {
+    q_camera.single_mut()?.translation = Vec3::ZERO;
+    Ok(())
 }
 fn physics(time_fixed: Res<Time<Fixed>>, mut query: Query<(&mut Transform, &Velocity)>) {
     query.iter_mut().for_each(|(mut transform, vel)| {

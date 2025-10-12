@@ -1,10 +1,9 @@
 use super::MainState;
 use crate::utils::ui::*;
-use crate::utils::*;
 use bevy::prelude::*;
 
 pub fn menu_plugin(app: &mut App) {
-    app.add_systems(OnEnter(MainState::Menu), (reset_camera, setup_ui))
+    app.add_systems(OnEnter(MainState::Menu), setup_ui)
         .add_systems(
             Update,
             (
