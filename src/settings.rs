@@ -1,3 +1,5 @@
+// TODO Split into settings.rs and options.rs where one concerns the settings menu and the other
+// the state of those settings.
 use crate::MainState;
 use crate::utils::ui::*;
 
