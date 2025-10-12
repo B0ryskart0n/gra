@@ -39,6 +39,8 @@ fn handle_keyboard(
     }
 }
 
+// TODO Consider tying those functions with specific Buttons and running a big system
+// that queries all buttons and processes their statuses.
 fn handle_game_button(
     mut q_button: Query<
         (&Interaction, &mut BackgroundColor),
