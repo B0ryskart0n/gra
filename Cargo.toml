@@ -12,7 +12,8 @@ debug = false
 [profile.dev.package."*"]
 opt-level = 3
 
+[dependencies]
+avian2d = {version = "0.4.0" }
 # Since there is no option to specify profile-specific dependency features, the dynamic_linking is specified here.
 # Needs to be removed for prod builds.
-[dependencies]
 bevy = { version = "0.17", features = ["dynamic_linking"] }
