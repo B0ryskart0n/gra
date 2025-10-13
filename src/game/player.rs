@@ -50,6 +50,7 @@ pub fn update_stats(mut q_player: Query<(&mut Stats, &Equipment)>) -> Result {
     stats.apply_equipment(&eq);
     Ok(())
 }
+// TODO Don't dash if the character is standing still. It makes no sense.
 /// In case of high frame rate (bigger than `FixedTime` 64Hz), if one swift button press is registered and
 /// that input is overriden in  next schedule run (when the button is already released) and
 /// the `FixedUpdate` schedule did not run, because the two frames were too close to each other,

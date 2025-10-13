@@ -52,7 +52,7 @@ pub fn game_plugin(app: &mut App) {
         .add_systems(OnExit(MainState::Game), reset_camera)
         .add_systems(
             RunFixedMainLoop,
-            player::handle_input
+            (update_camera, player::handle_input)
                 .run_if(in_state(MainState::Game))
                 .in_set(RunFixedMainLoopSystems::BeforeFixedMainLoop),
         )
@@ -75,7 +75,6 @@ pub fn game_plugin(app: &mut App) {
                 stages::stage1.run_if(on_message::<ChangeStage>),
                 pause::toggle.run_if(input_just_pressed(KeyCode::Escape)),
                 player::visual_state,
-                update_camera,
                 update_run,
                 exit_game.run_if(input_just_pressed(KeyCode::F4).or(on_message::<PlayerDeath>)),
                 player::update_stats.run_if(on_message::<ItemPickup>),
