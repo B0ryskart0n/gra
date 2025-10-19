@@ -19,3 +19,5 @@ Also maybe devide those into damage types (like piercing, slashing, ...)
 
 That might give a nice dimension of character development.
 There might be items pretty much useless on one champion and ideal on another.
+
+Implement Hazard(active, power) Component which deduces health

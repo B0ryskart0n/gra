@@ -9,32 +9,33 @@ use super::CursorPosition;
 use super::MainState;
 use super::PrimaryCamera;
 use super::utils;
+use avian2d::prelude::*;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
 use bevy::time::Stopwatch;
 use std::collections::HashMap;
 use std::mem::discriminant;
 
+const PIXELS_PER_METER: f32 = 40.0;
 const SPRITE_ORIENTATION: Vec2 = Vec2::Y;
 const DASH_TIME: f32 = 0.4;
 const ENEMY_SPAWN_INTERVAL: f32 = 5.0;
-const ENEMY_SIZE: f32 = 15.0;
-const ENEMY_HEALTH: f32 = 3.0;
-const ENEMY_SPEED: f32 = 100.0;
 /// Rate of exponential decay in the distance between camera and it's goal.
 const CAMERA_SPEED: f32 = 8.0;
 const CURSOR_CAMERA_INFLUENCE: f32 = 0.3;
 const ATTACK_SPEED: f32 = 2.0;
-const PLAYER_SIZE: f32 = 25.0;
-const PLAYER_SPEED: f32 = 120.0;
-const PLAYER_HEALTH: f32 = 100.0;
+const PLAYER_SPEED: f32 = 3.0 * PIXELS_PER_METER;
+const PLAYER_MAX_HEALTH: f32 = 100.0;
 
 pub fn game_plugin(app: &mut App) {
-    app.add_sub_state::<GameSubState>()
+    app.add_plugins(PhysicsPlugins::default().with_length_unit(PIXELS_PER_METER))
+        .add_sub_state::<GameSubState>()
         .add_message::<PlayerDeath>()
+        .add_message::<PlayerDamage>()
         .add_message::<ItemPickup>()
         .add_message::<ChangeStage>()
         .clear_messages_on_exit::<PlayerDeath>(MainState::Game)
+        .clear_messages_on_exit::<PlayerDamage>(MainState::Game)
         .clear_messages_on_exit::<ItemPickup>(MainState::Game)
         .clear_messages_on_exit::<ChangeStage>(MainState::Game)
         .add_systems(
@@ -59,19 +60,20 @@ pub fn game_plugin(app: &mut App) {
         .add_systems(
             FixedUpdate,
             (
-                enemy::spawn,
                 player::hit,
+                player::take_damage,
                 (enemy::hit, enemy::despawn_unhealthy).chain(),
                 player::attack,
                 utils::lifetime,
-                (player::handle_state, enemy::handle_state, physics).chain(),
+                player::handle_state,
+                enemy::handle_state,
             )
                 .run_if(in_state(MainState::Game)),
         )
         .add_systems(
             Update,
             (
-                // TODO Migrate to Observer systems
+                enemy::spawn,
                 stages::stage1.run_if(on_message::<ChangeStage>),
                 pause::toggle.run_if(input_just_pressed(KeyCode::Escape)),
                 player::visual_state,
@@ -100,11 +102,6 @@ fn exit_game(mut next_state: ResMut<NextState<MainState>>) {
 fn reset_camera(mut q_camera: Query<&mut Transform, With<PrimaryCamera>>) -> Result {
     q_camera.single_mut()?.translation = Vec3::ZERO;
     Ok(())
-}
-fn physics(time_fixed: Res<Time<Fixed>>, mut query: Query<(&mut Transform, &Velocity)>) {
-    query.iter_mut().for_each(|(mut transform, vel)| {
-        transform.translation += vel.0.extend(0.0) * time_fixed.delta_secs()
-    });
 }
 fn update_camera(
     time: Res<Time>,
@@ -144,9 +141,10 @@ enum GameSubState {
 
 #[derive(Message, Default)]
 struct ItemPickup;
-
 #[derive(Message, Default)]
 struct PlayerDeath;
+#[derive(Message)]
+struct PlayerDamage(f32);
 
 #[allow(dead_code)]
 // TODO Add handling for different stages
@@ -165,10 +163,12 @@ impl Default for EnemySpawner {
 }
 
 #[derive(Component)]
-struct Velocity(Vec2);
-
-#[derive(Component)]
 struct Health(f32);
+impl Default for Health {
+    fn default() -> Self {
+        Health(PLAYER_MAX_HEALTH)
+    }
+}
 
 #[derive(Component)]
 struct Projectile;
@@ -201,7 +201,7 @@ struct Stats {
 impl Default for Stats {
     fn default() -> Self {
         Self {
-            max_health: PLAYER_HEALTH,
+            max_health: PLAYER_MAX_HEALTH,
             attack_speed: ATTACK_SPEED,
             movement_speed: PLAYER_SPEED,
         }

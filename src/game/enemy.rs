@@ -2,6 +2,10 @@ use super::*;
 use crate::utils::*;
 use bevy::prelude::*;
 
+const ENEMY_SPEED: f32 = 4.0 * PIXELS_PER_METER;
+const ENEMY_SIZE: f32 = 0.4 * PIXELS_PER_METER;
+const ENEMY_HEALTH: f32 = 3.0;
+
 pub fn spawn(
     time: Res<Time<Fixed>>,
     mut commands: Commands,
@@ -12,7 +16,8 @@ pub fn spawn(
             commands.spawn((
                 Enemy,
                 Health(ENEMY_HEALTH),
-                Velocity(Vec2::ZERO),
+                RigidBody::Dynamic,
+                Collider::rectangle(ENEMY_SIZE, ENEMY_SIZE),
                 Sprite::from_color(
                     Color::srgb(1.0, 0.0, 0.6),
                     Vec2::from((ENEMY_SIZE, ENEMY_SIZE)),
@@ -24,7 +29,7 @@ pub fn spawn(
     });
 }
 pub fn handle_state(
-    mut q_enemies: Query<(&GlobalTransform, &mut Transform, &mut Velocity), With<Enemy>>,
+    mut q_enemies: Query<(&GlobalTransform, &mut Transform, &mut LinearVelocity), With<Enemy>>,
     q_player: Query<&GlobalTransform, (With<Player>, Without<Enemy>)>,
 ) -> Result {
     let player_pos = q_player.single()?.translation();

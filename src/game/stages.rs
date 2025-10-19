@@ -11,9 +11,14 @@ pub fn stage0(q_stages: Query<Entity, With<Stage>>, mut commands: Commands) {
         .spawn((
             Stage,
             Sprite::from_color(Color::srgb(0.4, 0.4, 0.4), Vec2::splat(200.0)),
+            Transform::from_translation(0.1 * Vec3::Z),
             DespawnOnExit(MainState::Game),
         ))
-        .with_child((Door(1), Sprite::from_color(Color::BLACK, Vec2::splat(20.0))));
+        .with_child((
+            Door(1),
+            Sprite::from_color(Color::BLACK, Vec2::splat(20.0)),
+            Transform::from_translation(0.2 * Vec3::Z),
+        ));
 }
 
 pub fn stage1(
@@ -29,6 +34,7 @@ pub fn stage1(
         .spawn((
             Stage,
             Sprite::from_color(Color::srgb(0.4, 0.4, 0.4), Vec2::from((400.0, 300.0))),
+            Transform::from_translation(0.1 * Vec3::Z),
             EnemySpawner::default(),
             DespawnOnExit(MainState::Game),
         ))

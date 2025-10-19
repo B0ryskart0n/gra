@@ -2,12 +2,14 @@ use super::*;
 use crate::CursorPosition;
 use crate::MainState;
 use crate::utils::*;
+use avian2d::prelude::*;
 use bevy::prelude::*;
 use std::f32::consts::FRAC_1_SQRT_2;
 
+const PLAYER_SIZE: f32 = 0.8 * PIXELS_PER_METER;
 const PROJECTILE_SIZE: f32 = 2.0;
 const PROJECTILE_LIFETIME: f32 = 1.0;
-const PROJECTILE_SPEED: f32 = 400.0;
+const PROJECTILE_SPEED: f32 = 10.0 * PIXELS_PER_METER;
 const DIRECTION_RIGHT: Vec2 = Vec2::X;
 const DIRECTION_UPRIGHT: Vec2 = Vec2 {
     x: FRAC_1_SQRT_2,
@@ -35,13 +37,15 @@ pub fn spawn(mut commands: Commands) {
         DashTimer::default(),
         AttackTimer::default(),
         PlayerInput::default(),
-        Health(PLAYER_HEALTH),
+        Health::default(),
         Equipment::default(),
         Stats::default(),
-        Sprite::from_color(Color::WHITE, Vec2::from((PLAYER_SIZE, PLAYER_SIZE))),
+        Sprite::from_color(Color::WHITE, Vec2::splat(PLAYER_SIZE)),
         PlayerState::default(),
-        Transform::from_translation(Vec3::from((0.0, 0.0, 1.0))),
-        Velocity(Vec2::ZERO),
+        Transform::from_translation(Vec3::Z),
+        RigidBody::Dynamic,
+        Collider::rectangle(PLAYER_SIZE, PLAYER_SIZE),
+        CollidingEntities::default(),
         DespawnOnExit(MainState::Game),
     ));
 }
@@ -50,7 +54,6 @@ pub fn update_stats(mut q_player: Query<(&mut Stats, &Equipment)>) -> Result {
     stats.apply_equipment(&eq);
     Ok(())
 }
-// TODO Don't dash if the character is standing still. It makes no sense.
 /// In case of high frame rate (bigger than `FixedTime` 64Hz), if one swift button press is registered and
 /// that input is overriden in  next schedule run (when the button is already released) and
 /// the `FixedUpdate` schedule did not run, because the two frames were too close to each other,
@@ -82,8 +85,10 @@ pub fn handle_input(
         (false, true, true, false) => DIRECTION_DOWNRIGHT,
     };
 
-    player_input.dash = keyboard.any_just_pressed(vec![KeyCode::ShiftLeft, KeyCode::Space]);
+    player_input.dash = player_input.direction != Vec2::ZERO
+        && keyboard.any_just_pressed(vec![KeyCode::ShiftLeft, KeyCode::Space]);
     player_input.attack = mouse.pressed(MouseButton::Left);
+
     Ok(())
 }
 pub fn visual_state(mut query: Query<(&mut Sprite, &PlayerState), Changed<PlayerState>>) {
@@ -102,7 +107,7 @@ pub fn handle_state(
         (
             &PlayerInput,
             &mut PlayerState,
-            &mut Velocity,
+            &mut LinearVelocity,
             &mut DashTimer,
             &mut Transform,
             &Stats,
@@ -143,32 +148,35 @@ pub fn handle_state(
     Ok(())
 }
 pub fn hit(
-    q_enemies: Query<&GlobalTransform, With<Enemy>>,
-    mut q_player: Query<
-        (&mut Health, &GlobalTransform, &PlayerState),
-        (With<Player>, Without<Enemy>),
-    >,
-    mut death_messages: MessageWriter<PlayerDeath>,
+    q_player: Query<(&CollidingEntities, &PlayerState), With<Player>>,
+    q_enemies: Query<Entity, (With<Enemy>, Without<Player>)>,
+    mut damage_messages: MessageWriter<PlayerDamage>,
 ) -> Result {
-    let (mut player_health, player_transform, player_state) = q_player.single_mut()?;
+    let (colliding_entities, player_state) = q_player.single()?;
     let damage = match *player_state {
         PlayerState::Dashing(_) => 0.0,
-        _ => q_enemies
+        _ => colliding_entities
             .iter()
-            .map(|enemy_transform| {
-                square_collide(
-                    player_transform.translation(),
-                    PLAYER_SIZE,
-                    enemy_transform.translation(),
-                    super::ENEMY_SIZE,
-                )
-            })
-            .filter(|hit| *hit)
+            .filter(|e| q_enemies.contains(**e))
             .count() as f32,
     };
 
-    player_health.0 -= damage;
-    if player_health.0 <= 0.0 {
+    if damage >= 0.0 {
+        damage_messages.write(PlayerDamage(damage));
+    }
+
+    Ok(())
+}
+pub fn take_damage(
+    mut q_player: Query<&mut Health, With<Player>>,
+    mut damage_messages: MessageReader<PlayerDamage>,
+    mut death_messages: MessageWriter<PlayerDeath>,
+) -> Result {
+    let mut health = q_player.single_mut()?;
+
+    health.0 -= damage_messages.read().map(|message| message.0).sum::<f32>();
+
+    if health.0 <= 0.0 {
         death_messages.write_default();
     }
 
@@ -190,7 +198,8 @@ pub fn attack(
             Projectile,
             Sprite::from_color(Color::WHITE, Vec2::from((PROJECTILE_SIZE, PROJECTILE_SIZE))),
             Transform::from_translation(player_position),
-            Velocity(
+            RigidBody::Kinematic,
+            LinearVelocity(
                 PROJECTILE_SPEED
                     * (cursor_position.0.unwrap_or(SPRITE_ORIENTATION) - player_position.xy())
                         .normalize_or_zero(),

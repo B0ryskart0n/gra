@@ -7,6 +7,7 @@ mod settings;
 mod splash;
 mod utils;
 
+// TODO Consider using Events instead of using Messages everywhere.
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
