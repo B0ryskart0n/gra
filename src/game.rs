@@ -8,7 +8,7 @@ mod stages;
 use super::CursorPosition;
 use super::MainState;
 use super::PrimaryCamera;
-use super::utils;
+use super::utils::Lifetime;
 use avian2d::prelude::*;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
@@ -18,7 +18,6 @@ use std::mem::discriminant;
 
 const PIXELS_PER_METER: f32 = 40.0;
 const SPRITE_ORIENTATION: Vec2 = Vec2::Y;
-const DASH_TIME: f32 = 0.4;
 const ENEMY_SPAWN_INTERVAL: f32 = 5.0;
 /// Rate of exponential decay in the distance between camera and it's goal.
 const CAMERA_SPEED: f32 = 8.0;
@@ -60,13 +59,15 @@ pub fn game_plugin(app: &mut App) {
         .add_systems(
             FixedUpdate,
             (
+                // TODO Consider running collision effects run after the physics
                 player::hit,
                 player::take_damage,
-                (enemy::hit, enemy::despawn_unhealthy).chain(),
                 player::attack,
-                utils::lifetime,
                 player::handle_state,
+                enemy::hit,
                 enemy::handle_state,
+                Health::system,
+                Lifetime::system,
             )
                 .run_if(in_state(MainState::Game)),
         )
@@ -145,9 +146,7 @@ struct ItemPickup;
 struct PlayerDeath;
 #[derive(Message)]
 struct PlayerDamage(f32);
-
 #[allow(dead_code)]
-// TODO Add handling for different stages
 #[derive(Message)]
 struct ChangeStage(u8);
 
@@ -161,37 +160,24 @@ impl Default for EnemySpawner {
         ))
     }
 }
-
 #[derive(Component)]
 struct Health(f32);
-impl Default for Health {
-    fn default() -> Self {
-        Health(PLAYER_MAX_HEALTH)
+impl Health {
+    /// Despawns entities (except Player) with non-positive health.
+    pub fn system(mut commands: Commands, query: Query<(Entity, &Health), Without<Player>>) {
+        query.iter().for_each(|(e, h)| {
+            if h.0 <= 0.0 {
+                commands.entity(e).despawn();
+            }
+        })
     }
 }
-
 #[derive(Component)]
 struct Projectile;
-
 #[derive(Component)]
 struct Player;
-
 #[derive(Component)]
 struct Enemy;
-
-#[derive(Component, PartialEq, Default)]
-enum PlayerState {
-    #[default]
-    Idle,
-    Dashing(Vec2),
-    Attacking,
-}
-impl PlayerState {
-    fn is_dashing(&self) -> bool {
-        discriminant(self) == discriminant(&PlayerState::Dashing(Vec2::ZERO))
-    }
-}
-
 #[derive(Component)]
 struct Stats {
     max_health: f32,
@@ -210,14 +196,6 @@ impl Default for Stats {
 impl Stats {
     fn apply_equipment(&mut self, eq: &Equipment) {
         self.attack_speed *= 1.0 + eq.item_stat(&Item::Banana);
-    }
-}
-
-#[derive(Component)]
-struct DashTimer(Timer);
-impl Default for DashTimer {
-    fn default() -> Self {
-        DashTimer(Timer::from_seconds(DASH_TIME, TimerMode::Once))
     }
 }
 
@@ -258,22 +236,6 @@ impl Item {
             // Attack speed
             Self::Banana => 0.5,
         }
-    }
-}
-
-#[derive(Component, Default)]
-struct PlayerInput {
-    direction: Vec2,
-    dash: bool,
-    attack: bool,
-}
-
-/// Timer of 1 second, scaled by the `Stats` `attack_speed`
-#[derive(Component, Deref, DerefMut)]
-struct AttackTimer(Timer);
-impl Default for AttackTimer {
-    fn default() -> Self {
-        AttackTimer(Timer::from_seconds(1.0, TimerMode::Once))
     }
 }
 

@@ -7,34 +7,26 @@ pub fn _despawn<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: 
     }
 }
 
-pub fn square_collide(pos_a: Vec3, size_a: f32, pos_b: Vec3, size_b: f32) -> bool {
-    return pos_a.x - size_a / 2.0 < pos_b.x + size_b / 2.0
-        && pos_a.x + size_a / 2.0 > pos_b.x - size_b / 2.0
-        && pos_a.y - size_a / 2.0 < pos_b.y + size_b / 2.0
-        && pos_a.y + size_a / 2.0 > pos_b.y - size_b / 2.0;
-}
-
 #[derive(Component)]
 pub struct Lifetime(pub Timer);
 impl Lifetime {
     pub fn new(seconds: f32) -> Self {
         Lifetime(Timer::from_seconds(seconds, TimerMode::Once))
     }
+    /// Despawns entities which are past their bedtime.
+    pub fn system(
+        time: Res<Time>,
+        mut commands: Commands,
+        mut query: Query<(Entity, &mut Lifetime)>,
+    ) {
+        let dt = time.delta();
+        query.iter_mut().for_each(|(e, mut l)| {
+            if l.0.tick(dt).is_finished() {
+                commands.entity(e).despawn()
+            }
+        })
+    }
 }
-
-pub fn lifetime(
-    time: Res<Time>,
-    mut commands: Commands,
-    mut query: Query<(Entity, &mut Lifetime)>,
-) {
-    let dt = time.delta();
-    query.iter_mut().for_each(|(e, mut l)| {
-        if l.0.tick(dt).is_finished() {
-            commands.entity(e).despawn()
-        }
-    })
-}
-
 pub mod ui {
     use bevy::ecs::query::QuerySingleError;
     use bevy::prelude::*;

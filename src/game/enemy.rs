@@ -1,29 +1,20 @@
 use super::*;
-use crate::utils::*;
 use bevy::prelude::*;
 
 const ENEMY_SPEED: f32 = 4.0 * PIXELS_PER_METER;
 const ENEMY_SIZE: f32 = 0.4 * PIXELS_PER_METER;
 const ENEMY_HEALTH: f32 = 3.0;
 
-pub fn spawn(
-    time: Res<Time<Fixed>>,
-    mut commands: Commands,
-    mut q_spawners: Query<(Entity, &mut EnemySpawner)>,
-) {
-    q_spawners.iter_mut().for_each(|(parent, mut timer)| {
+pub fn spawn(time: Res<Time>, mut commands: Commands, mut q_spawners: Query<&mut EnemySpawner>) {
+    q_spawners.iter_mut().for_each(|mut timer| {
         if timer.0.tick(time.delta()).is_finished() {
             commands.spawn((
                 Enemy,
                 Health(ENEMY_HEALTH),
                 RigidBody::Dynamic,
                 Collider::rectangle(ENEMY_SIZE, ENEMY_SIZE),
-                Sprite::from_color(
-                    Color::srgb(1.0, 0.0, 0.6),
-                    Vec2::from((ENEMY_SIZE, ENEMY_SIZE)),
-                ),
+                Sprite::from_color(Color::srgb(1.0, 0.0, 0.6), Vec2::splat(ENEMY_SIZE)),
                 Transform::from_translation(Vec3::from((320.0, 180.0, 0.5))),
-                ChildOf(parent),
             ));
         }
     });
@@ -47,32 +38,32 @@ pub fn handle_state(
 }
 pub fn hit(
     mut commands: Commands,
-    mut enemies: Query<(&mut Health, &GlobalTransform), With<Enemy>>,
-    projectiles: Query<(Entity, &GlobalTransform), (With<Projectile>, Without<Enemy>)>,
+    mut q_enemies: Query<(Entity, &mut Health), With<Enemy>>,
+    q_projectiles: Query<Entity, (With<Projectile>, Without<Enemy>)>,
+    collisions: Collisions,
 ) {
-    projectiles
-        .iter()
-        .for_each(|(projectile, projectile_transform)| {
-            for (mut health, enemy_position) in enemies.iter_mut() {
-                if square_collide(
-                    enemy_position.translation(),
-                    ENEMY_SIZE,
-                    projectile_transform.translation(),
-                    0.0,
-                ) {
-                    health.0 = health.0 - 1.0;
-                    commands.entity(projectile).despawn();
-                    // Projectile despawned, so can't influence other enemies. Go to next projectile.
-                    // Maybe if in the future projectiles can pass through then handle differently.
-                    break;
+    q_enemies.iter_mut().for_each(|(enemy, mut health)| {
+        collisions
+            .entities_colliding_with(enemy)
+            .for_each(|entity| {
+                // If an enemy gets hit with two projectiles it gets 2 damage;
+                if q_projectiles.contains(entity) {
+                    health.0 -= 1.0;
+                    // One projectile can damage two enemies. This also leads to duplicate despawns.
+                    commands.entity(entity).try_despawn();
                 }
+            })
+    });
+
+    // TODO Compare the two approaches
+
+    q_projectiles.iter().for_each(|projectile| {
+        for entity in collisions.entities_colliding_with(projectile) {
+            if q_enemies.contains(entity) {
+                // lower entity health by 1.0
+                commands.entity(projectile).despawn();
+                break;
             }
-        })
-}
-pub fn despawn_unhealthy(mut commands: Commands, query: Query<(Entity, &Health), With<Enemy>>) {
-    query.iter().for_each(|(e, h)| {
-        if h.0 <= 0.0 {
-            commands.entity(e).despawn();
         }
     })
 }

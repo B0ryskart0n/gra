@@ -6,6 +6,7 @@ use avian2d::prelude::*;
 use bevy::prelude::*;
 use std::f32::consts::FRAC_1_SQRT_2;
 
+const DASH_TIME: f32 = 0.4;
 const PLAYER_SIZE: f32 = 0.8 * PIXELS_PER_METER;
 const PROJECTILE_SIZE: f32 = 2.0;
 const PROJECTILE_LIFETIME: f32 = 1.0;
@@ -37,7 +38,7 @@ pub fn spawn(mut commands: Commands) {
         DashTimer::default(),
         AttackTimer::default(),
         PlayerInput::default(),
-        Health::default(),
+        Health(PLAYER_MAX_HEALTH),
         Equipment::default(),
         Stats::default(),
         Sprite::from_color(Color::WHITE, Vec2::splat(PLAYER_SIZE)),
@@ -101,7 +102,7 @@ pub fn visual_state(mut query: Query<(&mut Sprite, &PlayerState), Changed<Player
         })
 }
 pub fn handle_state(
-    time_fixed: Res<Time<Fixed>>,
+    time_fixed: Res<Time>,
     cursor_position: Res<CursorPosition>,
     mut q_player: Query<
         (
@@ -149,7 +150,7 @@ pub fn handle_state(
 }
 pub fn hit(
     q_player: Query<(&CollidingEntities, &PlayerState), With<Player>>,
-    q_enemies: Query<Entity, (With<Enemy>, Without<Player>)>,
+    q_enemies: Query<Entity, With<Enemy>>,
     mut damage_messages: MessageWriter<PlayerDamage>,
 ) -> Result {
     let (colliding_entities, player_state) = q_player.single()?;
@@ -183,7 +184,7 @@ pub fn take_damage(
     Ok(())
 }
 pub fn attack(
-    time_fixed: Res<Time<Fixed>>,
+    time_fixed: Res<Time>,
     mut commands: Commands,
     mut q_player: Query<(&mut AttackTimer, &GlobalTransform, &PlayerState, &Stats), With<Player>>,
     cursor_position: Res<CursorPosition>,
@@ -211,4 +212,38 @@ pub fn attack(
     }
 
     Ok(())
+}
+
+#[derive(Component)]
+pub struct DashTimer(Timer);
+impl Default for DashTimer {
+    fn default() -> Self {
+        DashTimer(Timer::from_seconds(DASH_TIME, TimerMode::Once))
+    }
+}
+/// Timer of 1 second, scaled by the `Stats` `attack_speed`
+#[derive(Component, Deref, DerefMut)]
+pub struct AttackTimer(Timer);
+impl Default for AttackTimer {
+    fn default() -> Self {
+        AttackTimer(Timer::from_seconds(1.0, TimerMode::Once))
+    }
+}
+#[derive(Component, Default)]
+pub struct PlayerInput {
+    direction: Vec2,
+    dash: bool,
+    attack: bool,
+}
+#[derive(Component, PartialEq, Default)]
+pub enum PlayerState {
+    #[default]
+    Idle,
+    Dashing(Vec2),
+    Attacking,
+}
+impl PlayerState {
+    fn is_dashing(&self) -> bool {
+        discriminant(self) == discriminant(&PlayerState::Dashing(Vec2::ZERO))
+    }
 }
