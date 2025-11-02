@@ -39,29 +39,14 @@ pub fn handle_state(
 }
 pub fn hit(
     mut commands: Commands,
-    mut q_enemies: Query<(Entity, &mut Health), With<Enemy>>,
-    q_projectiles: Query<Entity, (With<Projectile>, Without<Enemy>)>,
+    mut q_enemies: Query<&mut Health, With<Enemy>>,
+    q_projectiles: Query<Entity, With<Projectile>>,
     collisions: Collisions,
 ) {
-    q_enemies.iter_mut().for_each(|(enemy, mut health)| {
-        collisions
-            .entities_colliding_with(enemy)
-            .for_each(|entity| {
-                // If an enemy gets hit with two projectiles it gets 2 damage;
-                if q_projectiles.contains(entity) {
-                    health.0 -= 1.0;
-                    // One projectile can damage two enemies. This also leads to duplicate despawns.
-                    commands.entity(entity).try_despawn();
-                }
-            })
-    });
-
-    // TODO Compare the two approaches
-
     q_projectiles.iter().for_each(|projectile| {
-        for entity in collisions.entities_colliding_with(projectile) {
-            if q_enemies.contains(entity) {
-                // lower entity health by 1.0
+        for colliding_entity in collisions.entities_colliding_with(projectile) {
+            if let Ok(mut health) = q_enemies.get_mut(colliding_entity) {
+                health.0 -= 1.0;
                 commands.entity(projectile).despawn();
                 break;
             }
