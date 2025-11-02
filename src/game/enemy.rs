@@ -15,6 +15,7 @@ pub fn spawn(time: Res<Time>, mut commands: Commands, mut q_spawners: Query<&mut
                 Collider::rectangle(ENEMY_SIZE, ENEMY_SIZE),
                 Sprite::from_color(Color::srgb(1.0, 0.0, 0.6), Vec2::splat(ENEMY_SIZE)),
                 Transform::from_translation(Vec3::from((320.0, 180.0, 0.5))),
+                DespawnOnExit(MainState::Game),
             ));
         }
     });
