@@ -202,8 +202,7 @@ pub fn attack(
             RigidBody::Kinematic,
             LinearVelocity(
                 PROJECTILE_SPEED
-                    * (cursor_position.0.unwrap_or(SPRITE_ORIENTATION) - player_position.xy())
-                        .normalize_or_zero(),
+                    * (cursor_position.0.unwrap_or(Vec2::ZERO) - player_position.xy()).normalize(),
             ),
             DespawnOnExit(MainState::Game),
             Lifetime::new(PROJECTILE_LIFETIME),

@@ -30,7 +30,7 @@ pub fn handle_state(
         .for_each(|(global_transform, mut transform, mut v)| {
             let towards_player = (player_pos - global_transform.translation())
                 .xy()
-                .normalize_or_zero();
+                .normalize();
             transform.rotation = Quat::from_rotation_arc_2d(SPRITE_ORIENTATION, towards_player);
             v.0 = ENEMY_SPEED * towards_player;
         });
