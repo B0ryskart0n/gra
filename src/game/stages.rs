@@ -6,6 +6,7 @@ pub fn stage0(q_stages: Query<Entity, With<Stage>>, mut commands: Commands) {
     q_stages.iter().for_each(|stage| {
         commands.entity(stage).despawn();
     });
+    // TODO Fix this door not being visible
     commands
         .spawn((
             Stage,
