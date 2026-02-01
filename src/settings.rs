@@ -12,19 +12,10 @@ const QHD_WIDTH: u32 = 2560;
 const QHD_HEIGHT: u32 = 1440;
 
 pub fn plugin(app: &mut App) {
-    app.init_resource::<UserSettings>()
-        .add_systems(PreStartup, startup_window_settings);
+    app.init_resource::<UserSettings>();
 }
 
-fn startup_window_settings(
-    mut q_window: Query<&mut Window>,
-    settings: Res<UserSettings>,
-) -> Result {
-    let mut window = q_window.single_mut()?;
-    settings.window.set_bevy(&mut window);
-    Ok(())
-}
-
+// TODO At launch, the window settings will not be in sync with bevy default.
 // TODO Add loading last settings and falling back to creating defaults from system settings.
 // TODO Create a mechanism for synchronizing with bevy settings to avoid desynchronization.
 // As those settings grow, it might be good to do a round trip. Something like:
@@ -45,14 +36,8 @@ impl Default for WindowSettings {
     }
 }
 impl WindowSettings {
-    pub fn set_bevy(&self, bevy_window: &mut Window) {
-        // Setting the mode before the resolution seems to work better.
-        bevy_window.position = WindowPosition::Centered(MonitorSelection::Current);
-        bevy_window.mode = self.to_bevy_mode();
-        bevy_window.resolution = self.to_bevy_res();
-    }
-    fn to_bevy_mode(&self) -> WindowMode {
-        match self {
+    pub fn update_bevy_window(&self, bevy_window: &mut Window) {
+        bevy_window.mode = match self {
             Self::Windowed(_) => WindowMode::Windowed,
             Self::Borderless => WindowMode::BorderlessFullscreen(MonitorSelection::Current),
         };

@@ -159,7 +159,7 @@ fn handle_apply_button(
 ) -> Result {
     let mut window = q_window.single_mut()?;
     button_interaction(q_button.single_mut(), || {
-        user_settings.window.set_bevy(&mut window);
+        user_settings.window.update_bevy_window(&mut window);
     });
     Ok(())
 }
