@@ -4,6 +4,12 @@ use bevy::window::WindowResolution;
 
 const LOGICAL_WIDTH: u32 = 640;
 const LOGICAL_HEIGHT: u32 = 360;
+const HD_WIDTH: u32 = 1280;
+const HD_HEIGHT: u32 = 720;
+const FULLHD_WIDTH: u32 = 1920;
+const FULLHD_HEIGHT: u32 = 1080;
+const QHD_WIDTH: u32 = 2560;
+const QHD_HEIGHT: u32 = 1440;
 
 pub fn plugin(app: &mut App) {
     app.init_resource::<UserSettings>()
@@ -32,7 +38,6 @@ pub struct UserSettings {
 pub enum WindowSettings {
     Windowed(Resolution),
     Borderless,
-    Fullscreen,
 }
 impl Default for WindowSettings {
     fn default() -> Self {
@@ -50,26 +55,18 @@ impl WindowSettings {
         match self {
             Self::Windowed(_) => WindowMode::Windowed,
             Self::Borderless => WindowMode::BorderlessFullscreen(MonitorSelection::Current),
-            Self::Fullscreen => {
-                WindowMode::Fullscreen(MonitorSelection::Current, VideoModeSelection::Current)
-            }
-        }
-    }
-    fn to_bevy_res(&self) -> WindowResolution {
-        match self {
-            WindowSettings::Windowed(res) => {
-                let mut window_resolution = WindowResolution::from(res.pixels());
-                window_resolution.set_scale_factor(res.scale());
-                window_resolution
-            }
-            _ => WindowResolution::from(Resolution::default().pixels()),
+        };
+
+        // No need to touch the resolution if not in Windowed.
+        if let Self::Windowed(resolution) = self {
+            bevy_window.resolution = WindowResolution::from(resolution.pixels())
+                .with_scale_factor_override(resolution.scale());
         }
     }
     pub fn cycle_mode(&mut self) {
         *self = match self {
             Self::Windowed(_) => Self::Borderless,
-            Self::Borderless => Self::Fullscreen,
-            Self::Fullscreen => Self::default(),
+            Self::Borderless => Self::default(),
         }
     }
     pub fn cycle_res(&mut self) {
@@ -82,7 +79,6 @@ impl WindowSettings {
         match self {
             Self::Windowed(_) => "Windowed".into(),
             Self::Borderless => "Borderless".into(),
-            Self::Fullscreen => "Fullscreen".into(),
         }
     }
     pub fn res_str(&self) -> String {
@@ -113,9 +109,9 @@ impl Resolution {
     fn pixels(&self) -> [u32; 2] {
         match self {
             Self::Logical => [LOGICAL_WIDTH, LOGICAL_HEIGHT],
-            Self::HD => [1280, 720],
-            Self::FullHD => [1920, 1080],
-            Self::QHD => [2560, 1440],
+            Self::HD => [HD_WIDTH, HD_HEIGHT],
+            Self::FullHD => [FULLHD_WIDTH, FULLHD_HEIGHT],
+            Self::QHD => [QHD_WIDTH, QHD_HEIGHT],
         }
     }
     fn cycle(&mut self) {
