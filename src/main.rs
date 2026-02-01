@@ -12,6 +12,8 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
         //.add_plugins(bevy::dev_tools::fps_overlay::FpsOverlayPlugin::default())
+        .add_plugins(bevy_inspector_egui::bevy_egui::EguiPlugin::default())
+        .add_plugins(bevy_inspector_egui::quick::WorldInspectorPlugin::default())
         // Needs to be done after StatesPlugin (part of DefaultPlugins)
         .init_state::<MainState>() // Initial state will be the #[default]
         .init_resource::<CursorPosition>()
