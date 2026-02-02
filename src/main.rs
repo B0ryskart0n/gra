@@ -31,7 +31,6 @@ fn main() {
         .add_plugins(bevy_inspector_egui::quick::WorldInspectorPlugin::default())
         // Needs to be done after StatesPlugin (part of DefaultPlugins)
         .init_state::<MainState>() // Initial state will be the #[default]
-        .init_resource::<CursorPosition>()
         .add_systems(Startup, spawn_camera)
         .add_plugins(splash::plugin)
         .add_plugins(menu::plugin)
@@ -41,9 +40,12 @@ fn main() {
 }
 
 fn spawn_camera(mut commands: Commands) {
-    commands.spawn(PrimaryCamera);
+    commands.spawn((PrimaryCamera, Cursor::default()));
 }
 
+/// Cursor world position, relative to the camera.
+#[derive(Component, Default)]
+struct Cursor(Option<Vec2>);
 #[derive(Component)]
 #[require(Camera2d)]
 struct PrimaryCamera;
@@ -56,7 +58,3 @@ enum MainState {
     Menu,
     Game,
 }
-
-/// Cursor world position.
-#[derive(Resource, Default)]
-struct CursorPosition(Option<Vec2>);

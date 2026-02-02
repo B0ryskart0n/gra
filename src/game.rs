@@ -5,7 +5,7 @@ mod pause;
 mod player;
 mod stages;
 
-use super::CursorPosition;
+use super::Cursor;
 use super::MainState;
 use super::PrimaryCamera;
 use super::utils::Lifetime;
@@ -13,6 +13,7 @@ use avian2d::prelude::*;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
 use bevy::time::Stopwatch;
+use bevy::window::PrimaryWindow;
 use std::collections::HashMap;
 
 const PIXELS_PER_METER: f32 = 40.0;
@@ -51,7 +52,7 @@ pub fn game_plugin(app: &mut App) {
         .add_systems(OnExit(MainState::Game), reset_camera)
         .add_systems(
             RunFixedMainLoop,
-            (update_cursor_position, update_camera, player::handle_input)
+            (update_camera_and_cursor, player::handle_input)
                 .run_if(in_state(MainState::Game))
                 .in_set(RunFixedMainLoopSystems::BeforeFixedMainLoop),
         )
@@ -103,31 +104,29 @@ fn reset_camera(mut q_camera: Query<&mut Transform, With<PrimaryCamera>>) -> Res
     q_camera.single_mut()?.translation = Vec3::ZERO;
     Ok(())
 }
-fn update_cursor_position(
-    mut cursor_position: ResMut<CursorPosition>,
-    q_window: Query<&Window>,
-    q_camera: Query<(&Camera, &GlobalTransform), With<PrimaryCamera>>,
+fn update_camera_and_cursor(
+    time: Res<Time>,
+    mut q_camera: Query<
+        (&Camera, &mut Transform, &GlobalTransform, &mut Cursor),
+        With<PrimaryCamera>,
+    >,
+    // the Without<Primary> is required because both query Transform
+    q_player: Query<&Transform, (With<Player>, Without<PrimaryCamera>)>,
+    q_window: Query<&Window, With<PrimaryWindow>>,
 ) -> Result {
-    let (camera, camera_transform) = q_camera.single()?;
+    let (camera, mut camera_transform, camera_global_transform, mut cursor) =
+        q_camera.single_mut()?;
+    let player = q_player.single()?;
     let window = q_window.single()?;
 
-    cursor_position.0 = window
+    cursor.0 = window
         .cursor_position()
-        .map(|viewport_position| camera.viewport_to_world_2d(camera_transform, viewport_position))
+        .map(|viewport_position| {
+            camera.viewport_to_world_2d(camera_global_transform, viewport_position)
+        })
         .and_then(|res| res.ok());
-    Ok(())
-}
-fn update_camera(
-    time: Res<Time>,
-    cursor_position: Res<CursorPosition>,
-    mut camera_query: Query<(&mut Transform, &GlobalTransform), With<Camera2d>>,
-    // the Without<Camera2d> is required because both query Transform
-    q_player: Query<&Transform, (With<Player>, Without<Camera2d>)>,
-) -> Result {
-    let (mut camera_transform, camera_global_transform) = camera_query.single_mut()?;
-    let player = q_player.single()?;
 
-    let camera_goal = match cursor_position.0 {
+    let camera_goal = match cursor.0 {
         // in case of no cursor on the screen just follow the player
         None => player.translation,
         Some(cursor_position) => {

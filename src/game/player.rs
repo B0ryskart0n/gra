@@ -1,5 +1,5 @@
 use super::*;
-use crate::CursorPosition;
+use crate::Cursor;
 use crate::MainState;
 use crate::utils::*;
 use avian2d::prelude::*;
@@ -104,7 +104,7 @@ pub fn visual_state(mut query: Query<(&mut Sprite, &PlayerState), Changed<Player
 }
 pub fn handle_state(
     time_fixed: Res<Time>,
-    cursor_position: Res<CursorPosition>,
+    q_cursor: Query<&Cursor>,
     mut q_player: Query<
         (
             &PlayerInput,
@@ -119,9 +119,10 @@ pub fn handle_state(
 ) -> Result {
     let (input, mut state, mut velocity, mut dash_timer, mut transform, stats) =
         q_player.single_mut()?;
+    let cursor = q_cursor.single()?;
 
-    if let Some(cursor) = cursor_position.0 {
-        let cursor_direction = (transform.translation.xy() - cursor).normalize();
+    if let Some(cursor_position) = cursor.0 {
+        let cursor_direction = (transform.translation.xy() - cursor_position).normalize();
         transform.rotation = Quat::from_rotation_arc_2d(SPRITE_ORIENTATION, cursor_direction);
     }
 
@@ -188,10 +189,11 @@ pub fn attack(
     time_fixed: Res<Time>,
     mut commands: Commands,
     mut q_player: Query<(&mut AttackTimer, &GlobalTransform, &PlayerState, &Stats), With<Player>>,
-    cursor_position: Res<CursorPosition>,
+    q_cursor: Query<&Cursor>,
 ) -> Result {
     let (mut attack_timer, player_transform, player_state, stats) = q_player.single_mut()?;
     let player_position = player_transform.translation();
+    let cursor = q_cursor.single()?;
 
     attack_timer.tick(time_fixed.delta().mul_f32(stats.attack_speed));
 
@@ -203,10 +205,10 @@ pub fn attack(
             RigidBody::Kinematic,
             // TODO Use CollisionLayers to have hostile and friendly things in different groups.
             Collider::rectangle(PROJECTILE_SIZE, PROJECTILE_SIZE),
-            // TODO When cursor_position is None then should fire at the direction of Player.
+            // TODO When cursor is None then should fire at the direction of Player.
             LinearVelocity(
                 PROJECTILE_SPEED
-                    * (cursor_position.0.unwrap_or(Vec2::ZERO) - player_position.xy()).normalize(),
+                    * (cursor.0.unwrap_or(Vec2::ZERO) - player_position.xy()).normalize(),
             ),
             DespawnOnExit(MainState::Game),
             Lifetime::new(PROJECTILE_LIFETIME),
