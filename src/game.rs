@@ -14,7 +14,6 @@ use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
 use bevy::time::Stopwatch;
 use std::collections::HashMap;
-use std::mem::discriminant;
 
 const PIXELS_PER_METER: f32 = 40.0;
 const SPRITE_ORIENTATION: Vec2 = Vec2::Y;
@@ -52,7 +51,7 @@ pub fn game_plugin(app: &mut App) {
         .add_systems(OnExit(MainState::Game), reset_camera)
         .add_systems(
             RunFixedMainLoop,
-            (update_camera, player::handle_input)
+            (update_cursor_position, update_camera, player::handle_input)
                 .run_if(in_state(MainState::Game))
                 .in_set(RunFixedMainLoopSystems::BeforeFixedMainLoop),
         )
@@ -102,6 +101,20 @@ fn exit_game(mut next_state: ResMut<NextState<MainState>>) {
 }
 fn reset_camera(mut q_camera: Query<&mut Transform, With<PrimaryCamera>>) -> Result {
     q_camera.single_mut()?.translation = Vec3::ZERO;
+    Ok(())
+}
+fn update_cursor_position(
+    mut cursor_position: ResMut<CursorPosition>,
+    q_window: Query<&Window>,
+    q_camera: Query<(&Camera, &GlobalTransform), With<PrimaryCamera>>,
+) -> Result {
+    let (camera, camera_transform) = q_camera.single()?;
+    let window = q_window.single()?;
+
+    cursor_position.0 = window
+        .cursor_position()
+        .map(|viewport_position| camera.viewport_to_world_2d(camera_transform, viewport_position))
+        .and_then(|res| res.ok());
     Ok(())
 }
 fn update_camera(
