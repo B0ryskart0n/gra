@@ -38,6 +38,7 @@ pub fn handle_state(
 
     Ok(())
 }
+// TODO Has non-zero probability of interaction with despawned entity.
 pub fn hit(
     mut commands: Commands,
     mut q_enemies: Query<&mut Health, With<Enemy>>,

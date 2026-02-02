@@ -57,6 +57,7 @@ pub fn update_stats(mut q_player: Query<(&mut Stats, &Equipment)>) -> Result {
     stats.apply_equipment(&eq);
     Ok(())
 }
+// TODO Shouldn't this be bound to handle_state since that uses this input and those could be run in different order?
 /// In case of high frame rate (bigger than `FixedTime` 64Hz), if one swift button press is registered and
 /// that input is overriden in  next schedule run (when the button is already released) and
 /// the `FixedUpdate` schedule did not run, because the two frames were too close to each other,
