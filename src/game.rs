@@ -248,3 +248,12 @@ impl Item {
 
 #[derive(Component, Default)]
 struct Run(Stopwatch);
+
+#[derive(Default, PhysicsLayer)]
+enum CollisionGroup {
+    #[default]
+    Default,
+    Player,
+    Projectile,
+    Enemy
+}

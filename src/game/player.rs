@@ -48,6 +48,7 @@ pub fn spawn(mut commands: Commands) {
         RigidBody::Dynamic,
         Collider::rectangle(PLAYER_SIZE, PLAYER_SIZE),
         CollidingEntities::default(),
+        CollisionLayers::new(CollisionGroup::Player, [CollisionGroup::Enemy]),
         DespawnOnExit(MainState::Game),
     ));
 }
@@ -212,6 +213,7 @@ pub fn attack(
             ),
             DespawnOnExit(MainState::Game),
             Lifetime::new(PROJECTILE_LIFETIME),
+            CollisionLayers::new(CollisionGroup::Projectile, [CollisionGroup::Enemy])
         ));
         attack_timer.0.reset();
     }
