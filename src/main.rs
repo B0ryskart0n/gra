@@ -27,8 +27,8 @@ fn main() {
                 }),
         )
         //.add_plugins(bevy::dev_tools::fps_overlay::FpsOverlayPlugin::default())
-        .add_plugins(bevy_inspector_egui::bevy_egui::EguiPlugin::default())
-        .add_plugins(bevy_inspector_egui::quick::WorldInspectorPlugin::default())
+        //.add_plugins(bevy_inspector_egui::bevy_egui::EguiPlugin::default())
+        //.add_plugins(bevy_inspector_egui::quick::WorldInspectorPlugin::default())
         // Needs to be done after StatesPlugin (part of DefaultPlugins)
         .init_state::<MainState>() // Initial state will be the #[default]
         .add_systems(Startup, startup)
