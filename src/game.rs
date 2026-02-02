@@ -7,13 +7,11 @@ mod stages;
 
 use super::Cursor;
 use super::MainState;
-use super::PrimaryCamera;
 use super::utils::Lifetime;
 use avian2d::prelude::*;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
 use bevy::time::Stopwatch;
-use bevy::window::PrimaryWindow;
 use std::collections::HashMap;
 
 const PIXELS_PER_METER: f32 = 40.0;
@@ -100,19 +98,16 @@ fn update_run(time: Res<Time>, mut q_run: Query<&mut Run>) -> Result {
 fn exit_game(mut next_state: ResMut<NextState<MainState>>) {
     next_state.set(MainState::Menu);
 }
-fn reset_camera(mut q_camera: Query<&mut Transform, With<PrimaryCamera>>) -> Result {
+fn reset_camera(mut q_camera: Query<&mut Transform, With<Camera>>) -> Result {
     q_camera.single_mut()?.translation = Vec3::ZERO;
     Ok(())
 }
 fn update_camera_and_cursor(
     time: Res<Time>,
-    mut q_camera: Query<
-        (&Camera, &mut Transform, &GlobalTransform, &mut Cursor),
-        With<PrimaryCamera>,
-    >,
-    // the Without<Primary> is required because both query Transform
-    q_player: Query<&Transform, (With<Player>, Without<PrimaryCamera>)>,
-    q_window: Query<&Window, With<PrimaryWindow>>,
+    mut q_camera: Query<(&Camera, &mut Transform, &GlobalTransform, &mut Cursor)>,
+    // the Without<Camera> is required because both query Transform
+    q_player: Query<&Transform, (With<Player>, Without<Camera>)>,
+    q_window: Query<&Window>,
 ) -> Result {
     let (camera, mut camera_transform, camera_global_transform, mut cursor) =
         q_camera.single_mut()?;
