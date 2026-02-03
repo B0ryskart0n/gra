@@ -39,6 +39,7 @@ impl WindowSettings {
     pub fn update_bevy_window(&self, bevy_window: &mut Window) {
         bevy_window.mode = match self {
             Self::Windowed(_) => WindowMode::Windowed,
+            // TODO Find largest resolution that fits in monitor and fill with black bars if needed.
             Self::Borderless => WindowMode::BorderlessFullscreen(MonitorSelection::Current),
         };
 
