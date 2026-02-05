@@ -27,6 +27,7 @@ pub fn toggle(
 pub fn spawn_invisible_overlay(mut commands: Commands) {
     commands
         .spawn((
+            Name::new("Pause overlay"),
             Node {
                 width: Val::Percent(100.0),
                 height: Val::Percent(100.0),

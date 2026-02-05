@@ -9,6 +9,7 @@ pub fn spawn(time: Res<Time>, mut commands: Commands, mut q_spawners: Query<&mut
     q_spawners.iter_mut().for_each(|mut timer| {
         if timer.0.tick(time.delta()).is_finished() {
             commands.spawn((
+                Name::new("Enemy"),
                 Enemy,
                 Health(ENEMY_HEALTH),
                 RigidBody::Dynamic,
@@ -16,7 +17,10 @@ pub fn spawn(time: Res<Time>, mut commands: Commands, mut q_spawners: Query<&mut
                 Sprite::from_color(Color::srgb(1.0, 0.0, 0.6), Vec2::splat(ENEMY_SIZE)),
                 Transform::from_translation(Vec3::from((320.0, 180.0, 0.5))),
                 DespawnOnExit(MainState::Game),
-                CollisionLayers::new(CollisionGroup::Enemy, [CollisionGroup::Projectile])
+                CollisionLayers::new(
+                    CollisionGroup::Enemy,
+                    [CollisionGroup::Player, CollisionGroup::Projectile],
+                ),
             ));
         }
     });

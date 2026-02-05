@@ -6,6 +6,7 @@ use crate::MainState;
 pub fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
         .spawn((
+            Name::new("Hud"),
             Node {
                 width: Val::Percent(100.0),
                 height: Val::Percent(100.0),

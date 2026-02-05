@@ -6,19 +6,29 @@ pub fn stage0(q_stages: Query<Entity, With<Stage>>, mut commands: Commands) {
     q_stages.iter().for_each(|stage| {
         commands.entity(stage).despawn();
     });
-    // TODO Fix this door not being visible
     commands
         .spawn((
+            Name::new("Stage 0"),
+            Sprite::sized(Vec2::new(1.0, 1.0)),
             Stage,
-            Sprite::from_color(Color::srgb(0.4, 0.4, 0.4), Vec2::splat(200.0)),
-            Transform::from_translation(0.1 * Vec3::Z),
             DespawnOnExit(MainState::Game),
         ))
-        .with_child((
-            Door(1),
-            Sprite::from_color(Color::BLACK, Vec2::splat(20.0)),
-            Transform::from_translation(0.2 * Vec3::Z),
-        ));
+        .with_children(|parent| {
+            parent.spawn((
+                Name::new("Floor"),
+                RigidBody::Static,
+                Collider::rectangle(200.0, 20.0),
+                CollisionLayers::new(CollisionGroup::Terrain, LayerMask::ALL),
+                Transform::from_translation(-100.0 * Vec3::Y),
+                Sprite::from_color(Color::WHITE, Vec2::new(200.0, 20.0)),
+            ));
+            parent.spawn((
+                Name::from("Door 1"),
+                Door(1),
+                Sprite::from_color(Color::BLACK, Vec2::splat(20.0)),
+                Transform::from_translation(0.2 * Vec3::Z),
+            ));
+        });
 }
 
 pub fn stage1(
@@ -32,6 +42,7 @@ pub fn stage1(
     });
     commands
         .spawn((
+            Name::new("Stage 1"),
             Stage,
             Sprite::from_color(Color::srgb(0.4, 0.4, 0.4), Vec2::from((400.0, 300.0))),
             Transform::from_translation(0.1 * Vec3::Z),

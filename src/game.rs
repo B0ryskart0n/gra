@@ -14,10 +14,10 @@ use bevy::prelude::*;
 use bevy::time::Stopwatch;
 use std::collections::HashMap;
 
-const PIXELS_PER_METER: f32 = 40.0;
+const PIXELS_PER_METER: f32 = 16.0;
 const SPRITE_ORIENTATION: Vec2 = Vec2::Y;
 const ENEMY_SPAWN_INTERVAL: f32 = 5.0;
-/// Rate of exponential decay in the distance between camera and it's goal.
+/// Rate of exponential decay in the distance between camera and its goal.
 const CAMERA_SPEED: f32 = 8.0;
 const CURSOR_CAMERA_INFLUENCE: f32 = 0.3;
 const ATTACK_SPEED: f32 = 2.0;
@@ -26,6 +26,7 @@ const PLAYER_MAX_HEALTH: f32 = 100.0;
 
 pub fn game_plugin(app: &mut App) {
     app.add_plugins(PhysicsPlugins::default().with_length_unit(PIXELS_PER_METER))
+        .insert_resource(Gravity(-10.0 * Vec2::Y * PIXELS_PER_METER))
         .add_sub_state::<GameSubState>()
         .add_message::<PlayerDeath>()
         .add_message::<PlayerDamage>()
@@ -89,7 +90,11 @@ pub fn game_plugin(app: &mut App) {
         );
 }
 fn run_start(mut commands: Commands) {
-    commands.spawn((Run::default(), DespawnOnExit(MainState::Game)));
+    commands.spawn((
+        Name::new("Run"),
+        Run::default(),
+        DespawnOnExit(MainState::Game),
+    ));
 }
 fn update_run(time: Res<Time>, mut q_run: Query<&mut Run>) -> Result {
     q_run.single_mut()?.0.tick(time.delta());
@@ -189,14 +194,14 @@ struct Enemy;
 struct Stats {
     max_health: f32,
     attack_speed: f32,
-    movement_speed: f32,
+    _movement_speed: f32,
 }
 impl Default for Stats {
     fn default() -> Self {
         Self {
             max_health: PLAYER_MAX_HEALTH,
             attack_speed: ATTACK_SPEED,
-            movement_speed: PLAYER_SPEED,
+            _movement_speed: PLAYER_SPEED,
         }
     }
 }
@@ -253,7 +258,8 @@ struct Run(Stopwatch);
 enum CollisionGroup {
     #[default]
     Default,
+    Terrain,
     Player,
     Projectile,
-    Enemy
+    Enemy,
 }

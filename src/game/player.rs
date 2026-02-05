@@ -8,7 +8,6 @@ use std::f32::consts::FRAC_1_SQRT_2;
 use std::mem::discriminant;
 
 const DASH_TIME: f32 = 0.4;
-const PLAYER_SIZE: f32 = 0.8 * PIXELS_PER_METER;
 const PROJECTILE_SIZE: f32 = 2.0;
 const PROJECTILE_LIFETIME: f32 = 1.0;
 const PROJECTILE_SPEED: f32 = 10.0 * PIXELS_PER_METER;
@@ -35,6 +34,7 @@ const DIRECTION_DOWNRIGHT: Vec2 = Vec2 {
 
 pub fn spawn(mut commands: Commands) {
     commands.spawn((
+        Name::new("Player"),
         Player,
         DashTimer::default(),
         AttackTimer::default(),
@@ -42,13 +42,18 @@ pub fn spawn(mut commands: Commands) {
         Health(PLAYER_MAX_HEALTH),
         Equipment::default(),
         Stats::default(),
-        Sprite::from_color(Color::WHITE, Vec2::splat(PLAYER_SIZE)),
+        Sprite::from_color(Color::WHITE, Vec2::new(16.0, 32.0)),
         PlayerState::default(),
         Transform::from_translation(Vec3::Z),
-        RigidBody::Dynamic,
-        Collider::rectangle(PLAYER_SIZE, PLAYER_SIZE),
-        CollidingEntities::default(),
-        CollisionLayers::new(CollisionGroup::Player, [CollisionGroup::Enemy]),
+        (
+            RigidBody::Dynamic,
+            Collider::rectangle(16.0, 32.0),
+            CollidingEntities::default(),
+            CollisionLayers::new(
+                CollisionGroup::Player,
+                [CollisionGroup::Enemy, CollisionGroup::Terrain],
+            ),
+        ),
         DespawnOnExit(MainState::Game),
     ));
 }
@@ -106,27 +111,9 @@ pub fn visual_state(mut query: Query<(&mut Sprite, &PlayerState), Changed<Player
 }
 pub fn handle_state(
     time_fixed: Res<Time>,
-    q_cursor: Query<&Cursor>,
-    mut q_player: Query<
-        (
-            &PlayerInput,
-            &mut PlayerState,
-            &mut LinearVelocity,
-            &mut DashTimer,
-            &mut Transform,
-            &Stats,
-        ),
-        With<Player>,
-    >,
+    mut q_player: Query<(&PlayerInput, &mut PlayerState, &mut DashTimer)>,
 ) -> Result {
-    let (input, mut state, mut velocity, mut dash_timer, mut transform, stats) =
-        q_player.single_mut()?;
-    let cursor = q_cursor.single()?;
-
-    if let Some(cursor_position) = cursor.0 {
-        let cursor_direction = (transform.translation.xy() - cursor_position).normalize();
-        transform.rotation = Quat::from_rotation_arc_2d(SPRITE_ORIENTATION, cursor_direction);
-    }
+    let (input, mut state, mut dash_timer) = q_player.single_mut()?;
 
     let dt = time_fixed.delta();
 
@@ -142,14 +129,7 @@ pub fn handle_state(
         };
     }
 
-    let base_velocity = match *state {
-        PlayerState::Idle => 1.0 * input.direction,
-        PlayerState::Dashing(dash) => 2.5 * dash,
-        PlayerState::Attacking => 0.5 * input.direction,
-    };
-
-    velocity.0 = base_velocity * stats.movement_speed;
-
+    // TODO Add movement
     Ok(())
 }
 pub fn hit(
@@ -201,6 +181,7 @@ pub fn attack(
 
     if *player_state == PlayerState::Attacking && attack_timer.0.is_finished() {
         commands.spawn((
+            Name::new("Projectile"),
             Projectile,
             Sprite::from_color(Color::WHITE, Vec2::from((PROJECTILE_SIZE, PROJECTILE_SIZE))),
             Transform::from_translation(player_position),
@@ -214,7 +195,10 @@ pub fn attack(
             ),
             DespawnOnExit(MainState::Game),
             Lifetime::new(PROJECTILE_LIFETIME),
-            CollisionLayers::new(CollisionGroup::Projectile, [CollisionGroup::Enemy])
+            CollisionLayers::new(
+                CollisionGroup::Projectile,
+                [CollisionGroup::Terrain, CollisionGroup::Enemy],
+            ),
         ));
         attack_timer.0.reset();
     }
