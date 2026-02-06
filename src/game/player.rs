@@ -44,9 +44,9 @@ pub fn spawn(mut commands: Commands) {
         Health(PLAYER_MAX_HEALTH),
         Equipment::default(),
         Stats::default(),
-        Sprite::from_color(Color::WHITE, Vec2::new(1.0, 2.0)),
         PlayerState::default(),
-        Transform::from_translation(Vec3::Z),
+        Transform::from_translation(Vec3::new(0.0, 1.0, 1.0)),
+        Sprite::from_color(Color::WHITE, Vec2::new(1.0, 2.0)),
         (
             RigidBody::Dynamic,
             Collider::rectangle(1.0, 2.0),
@@ -102,15 +102,6 @@ pub fn handle_input(
 
     Ok(())
 }
-pub fn visual_state(mut query: Query<(&mut Sprite, &PlayerState), Changed<PlayerState>>) {
-    query
-        .iter_mut()
-        .for_each(|(mut sprite, state)| match *state {
-            PlayerState::Idle => sprite.color = Color::srgb(0.1, 1.0, 0.1),
-            PlayerState::Attacking => sprite.color = Color::srgb(1.0, 0.1, 0.1),
-            PlayerState::Dashing(_) => sprite.color = Color::srgb(0.1, 0.1, 1.0),
-        })
-}
 pub fn handle_state(
     time_fixed: Res<Time>,
     mut q_player: Query<(&PlayerInput, &mut PlayerState, &mut DashTimer)>,
@@ -133,6 +124,15 @@ pub fn handle_state(
 
     // TODO Add movement
     Ok(())
+}
+pub fn visual_state(mut query: Query<(&mut Sprite, &PlayerState), Changed<PlayerState>>) {
+    query
+        .iter_mut()
+        .for_each(|(mut sprite, state)| match *state {
+            PlayerState::Idle => sprite.color = Color::srgb(0.1, 1.0, 0.1),
+            PlayerState::Attacking => sprite.color = Color::srgb(1.0, 0.1, 0.1),
+            PlayerState::Dashing(_) => sprite.color = Color::srgb(0.1, 0.1, 1.0),
+        })
 }
 pub fn hit(
     q_player: Query<(&CollidingEntities, &PlayerState), With<Player>>,

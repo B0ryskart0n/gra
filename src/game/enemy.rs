@@ -13,14 +13,15 @@ pub fn spawn(time: Res<Time>, mut commands: Commands, mut q_spawners: Query<&mut
                 Enemy,
                 Health(ENEMY_HEALTH),
                 RigidBody::Dynamic,
-                Collider::rectangle(ENEMY_SIZE, ENEMY_SIZE),
+                // Spawn at the spawner, so relative position = ZERO
+                Transform::from_translation(Vec3::ZERO),
                 Sprite::from_color(Color::srgb(1.0, 0.0, 0.6), Vec2::splat(ENEMY_SIZE)),
-                Transform::from_translation(Vec3::new(18.0, 9.0, 0.5)),
-                DespawnOnExit(MainState::Game),
+                Collider::rectangle(ENEMY_SIZE, ENEMY_SIZE),
                 CollisionLayers::new(
                     CollisionGroup::Enemy,
                     [CollisionGroup::Player, CollisionGroup::Projectile],
                 ),
+                DespawnOnExit(MainState::Game),
             ));
         }
     });

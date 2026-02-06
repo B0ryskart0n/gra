@@ -9,24 +9,20 @@ pub fn stage0(q_stages: Query<Entity, With<Stage>>, mut commands: Commands) {
     commands
         .spawn((
             Name::new("Stage 0"),
-            Sprite::sized(Vec2::new(1.0, 1.0)),
             Stage,
+            RigidBody::Static,
+            Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
+            Sprite::from_color(Color::WHITE, Vec2::new(30.0, 1.0)),
+            Collider::rectangle(30.0, 1.0),
+            CollisionLayers::new(CollisionGroup::Terrain, LayerMask::ALL),
             DespawnOnExit(MainState::Game),
         ))
         .with_children(|parent| {
             parent.spawn((
-                Name::new("Floor"),
-                RigidBody::Static,
-                Collider::rectangle(30.0, 1.0),
-                CollisionLayers::new(CollisionGroup::Terrain, LayerMask::ALL),
-                Transform::from_translation(-10.0 * Vec3::Y),
-                Sprite::from_color(Color::WHITE, Vec2::new(30.0, 1.0)),
-            ));
-            parent.spawn((
                 Name::from("Door 1"),
                 Door(1),
-                Sprite::from_color(Color::BLACK, Vec2::splat(1.5)),
-                Transform::from_translation(0.2 * Vec3::Z),
+                Sprite::from_color(Color::BLACK, Vec2::splat(2.0)),
+                Transform::from_translation(Vec3::new(5.0, 1.5, 0.2)),
             ));
         });
 }
@@ -44,16 +40,22 @@ pub fn stage1(
         .spawn((
             Name::new("Stage 1"),
             Stage,
-            Sprite::from_color(Color::srgb(0.4, 0.4, 0.4), Vec2::from((400.0, 300.0))),
-            Transform::from_translation(0.1 * Vec3::Z),
-            EnemySpawner::default(),
+            RigidBody::Static,
+            Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
+            Sprite::from_color(Color::WHITE, Vec2::new(100.0, 1.0)),
+            Collider::rectangle(100.0, 1.0),
+            CollisionLayers::new(CollisionGroup::Terrain, LayerMask::ALL),
             DespawnOnExit(MainState::Game),
         ))
         .with_children(|parent| {
             parent.spawn((
+                Transform::from_translation(Vec3::new(18.0, 9.0, 0.5)),
+                EnemySpawner::default(),
+            ));
+            parent.spawn((
                 Item::Banana,
                 Sprite::from_image(Item::Banana.image(&asset_server)),
-                Transform::from_translation(Vec3::from((100.0, -100.0, 0.4))),
+                Transform::from_translation(Vec3::new(-3.0, 5.0, 0.4)),
             ));
         });
 }
