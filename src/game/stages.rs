@@ -17,15 +17,15 @@ pub fn stage0(q_stages: Query<Entity, With<Stage>>, mut commands: Commands) {
             parent.spawn((
                 Name::new("Floor"),
                 RigidBody::Static,
-                Collider::rectangle(200.0, 20.0),
+                Collider::rectangle(30.0, 1.0),
                 CollisionLayers::new(CollisionGroup::Terrain, LayerMask::ALL),
-                Transform::from_translation(-100.0 * Vec3::Y),
-                Sprite::from_color(Color::WHITE, Vec2::new(200.0, 20.0)),
+                Transform::from_translation(-10.0 * Vec3::Y),
+                Sprite::from_color(Color::WHITE, Vec2::new(30.0, 1.0)),
             ));
             parent.spawn((
                 Name::from("Door 1"),
                 Door(1),
-                Sprite::from_color(Color::BLACK, Vec2::splat(20.0)),
+                Sprite::from_color(Color::BLACK, Vec2::splat(1.5)),
                 Transform::from_translation(0.2 * Vec3::Z),
             ));
         });

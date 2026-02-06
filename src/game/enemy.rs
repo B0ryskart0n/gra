@@ -1,8 +1,8 @@
 use super::*;
 use bevy::prelude::*;
 
-const ENEMY_SPEED: f32 = 4.0 * PIXELS_PER_METER;
-const ENEMY_SIZE: f32 = 0.4 * PIXELS_PER_METER;
+const ENEMY_SPEED: f32 = 4.0;
+const ENEMY_SIZE: f32 = 0.4;
 const ENEMY_HEALTH: f32 = 3.0;
 
 pub fn spawn(time: Res<Time>, mut commands: Commands, mut q_spawners: Query<&mut EnemySpawner>) {
@@ -15,7 +15,7 @@ pub fn spawn(time: Res<Time>, mut commands: Commands, mut q_spawners: Query<&mut
                 RigidBody::Dynamic,
                 Collider::rectangle(ENEMY_SIZE, ENEMY_SIZE),
                 Sprite::from_color(Color::srgb(1.0, 0.0, 0.6), Vec2::splat(ENEMY_SIZE)),
-                Transform::from_translation(Vec3::from((320.0, 180.0, 0.5))),
+                Transform::from_translation(Vec3::new(18.0, 9.0, 0.5)),
                 DespawnOnExit(MainState::Game),
                 CollisionLayers::new(
                     CollisionGroup::Enemy,

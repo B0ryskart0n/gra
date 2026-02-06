@@ -5,28 +5,28 @@ mod pause;
 mod player;
 mod stages;
 
-use super::Cursor;
-use super::MainState;
-use super::utils::Lifetime;
+use crate::Cursor;
+use crate::MainState;
+use crate::PIXELS_PER_METER;
+use crate::utils::Lifetime;
 use avian2d::prelude::*;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
 use bevy::time::Stopwatch;
 use std::collections::HashMap;
 
-const PIXELS_PER_METER: f32 = 16.0;
 const SPRITE_ORIENTATION: Vec2 = Vec2::Y;
 const ENEMY_SPAWN_INTERVAL: f32 = 5.0;
 /// Rate of exponential decay in the distance between camera and its goal.
 const CAMERA_SPEED: f32 = 8.0;
 const CURSOR_CAMERA_INFLUENCE: f32 = 0.3;
 const ATTACK_SPEED: f32 = 2.0;
-const PLAYER_SPEED: f32 = 3.0 * PIXELS_PER_METER;
+const PLAYER_SPEED: f32 = 3.0;
 const PLAYER_MAX_HEALTH: f32 = 100.0;
 
 pub fn game_plugin(app: &mut App) {
     app.add_plugins(PhysicsPlugins::default().with_length_unit(PIXELS_PER_METER))
-        .insert_resource(Gravity(-10.0 * Vec2::Y * PIXELS_PER_METER))
+        .insert_resource(Gravity(-10.0 * Vec2::Y))
         .add_sub_state::<GameSubState>()
         .add_message::<PlayerDeath>()
         .add_message::<PlayerDamage>()

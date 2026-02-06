@@ -7,6 +7,10 @@ mod settings;
 mod splash;
 mod utils;
 
+// Important for perspective and sprite scaling
+const PIXELS_PER_METER: f32 = 16.0;
+const METERS_PER_PIXEL: f32 = 1.0 / PIXELS_PER_METER;
+
 // TODO Consider using Events instead of using Messages everywhere.
 fn main() {
     App::new()
@@ -40,7 +44,14 @@ fn main() {
 }
 
 fn startup(mut commands: Commands) {
-    commands.spawn((Camera2d, Cursor::default()));
+    commands.spawn((
+        Camera2d,
+        Projection::Orthographic(OrthographicProjection {
+            scale: METERS_PER_PIXEL,
+            ..OrthographicProjection::default_2d()
+        }),
+        Cursor::default(),
+    ));
 }
 
 /// Cursor world position, relative to the camera.

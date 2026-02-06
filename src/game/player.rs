@@ -1,5 +1,7 @@
 use super::*;
+
 use crate::Cursor;
+use crate::METERS_PER_PIXEL;
 use crate::MainState;
 use crate::utils::*;
 use avian2d::prelude::*;
@@ -8,9 +10,9 @@ use std::f32::consts::FRAC_1_SQRT_2;
 use std::mem::discriminant;
 
 const DASH_TIME: f32 = 0.4;
-const PROJECTILE_SIZE: f32 = 2.0;
+const PROJECTILE_SIZE: f32 = METERS_PER_PIXEL * 2.0;
 const PROJECTILE_LIFETIME: f32 = 1.0;
-const PROJECTILE_SPEED: f32 = 10.0 * PIXELS_PER_METER;
+const PROJECTILE_SPEED: f32 = 50.0;
 const DIRECTION_RIGHT: Vec2 = Vec2::X;
 const DIRECTION_UPRIGHT: Vec2 = Vec2 {
     x: FRAC_1_SQRT_2,
@@ -42,12 +44,12 @@ pub fn spawn(mut commands: Commands) {
         Health(PLAYER_MAX_HEALTH),
         Equipment::default(),
         Stats::default(),
-        Sprite::from_color(Color::WHITE, Vec2::new(16.0, 32.0)),
+        Sprite::from_color(Color::WHITE, Vec2::new(1.0, 2.0)),
         PlayerState::default(),
         Transform::from_translation(Vec3::Z),
         (
             RigidBody::Dynamic,
-            Collider::rectangle(16.0, 32.0),
+            Collider::rectangle(1.0, 2.0),
             CollidingEntities::default(),
             CollisionLayers::new(
                 CollisionGroup::Player,
