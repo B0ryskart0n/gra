@@ -5,16 +5,19 @@ const ENEMY_SPEED: f32 = 4.0;
 const ENEMY_SIZE: f32 = 0.4;
 const ENEMY_HEALTH: f32 = 3.0;
 
-pub fn spawn(time: Res<Time>, mut commands: Commands, mut q_spawners: Query<&mut EnemySpawner>) {
-    q_spawners.iter_mut().for_each(|mut timer| {
+pub fn spawn(
+    time: Res<Time>,
+    mut commands: Commands,
+    mut q_spawners: Query<(&GlobalTransform, &mut EnemySpawner)>,
+) {
+    q_spawners.iter_mut().for_each(|(transform, mut timer)| {
         if timer.0.tick(time.delta()).is_finished() {
             commands.spawn((
                 Name::new("Enemy"),
                 Enemy,
                 Health(ENEMY_HEALTH),
                 RigidBody::Dynamic,
-                // Spawn at the spawner, so relative position = ZERO
-                Transform::from_translation(Vec3::ZERO),
+                Transform::from_translation(transform.translation()),
                 Sprite::from_color(Color::srgb(1.0, 0.0, 0.6), Vec2::splat(ENEMY_SIZE)),
                 Collider::rectangle(ENEMY_SIZE, ENEMY_SIZE),
                 CollisionLayers::new(

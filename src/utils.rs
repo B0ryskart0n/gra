@@ -1,5 +1,13 @@
 use bevy::prelude::*;
 
+pub fn image_size_to_sprite(image: Handle<Image>, meter_size: Vec2) -> Sprite {
+    Sprite {
+        image: image,
+        custom_size: Some(meter_size),
+        ..default()
+    }
+}
+
 // Generic system that takes a component as a parameter, and will despawn all entities with that component
 pub fn _despawn<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
     for entity in &to_despawn {

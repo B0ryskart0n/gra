@@ -6,6 +6,7 @@ mod player;
 mod stages;
 
 use crate::Cursor;
+use crate::METERS_PER_PIXEL;
 use crate::MainState;
 use crate::PIXELS_PER_METER;
 use crate::utils::Lifetime;
@@ -51,7 +52,7 @@ pub fn game_plugin(app: &mut App) {
         .add_systems(OnExit(MainState::Game), reset_camera)
         .add_systems(
             RunFixedMainLoop,
-            (update_camera_and_cursor, player::handle_input)
+            update_camera_and_cursor
                 .run_if(in_state(MainState::Game))
                 .in_set(RunFixedMainLoopSystems::BeforeFixedMainLoop),
         )
@@ -62,7 +63,7 @@ pub fn game_plugin(app: &mut App) {
                 player::hit,
                 player::take_damage,
                 player::attack,
-                player::handle_state,
+                player::handle_input,
                 enemy::hit,
                 enemy::handle_state,
                 Health::system,
@@ -238,6 +239,12 @@ enum Item {
     Banana,
 }
 impl Item {
+    // FIXME Knowing the pixel (and meter) size should not be runtime.
+    fn size(&self) -> Vec2 {
+        match self {
+            Self::Banana => METERS_PER_PIXEL * Vec2::new(16.0, 16.0),
+        }
+    }
     fn image(&self, asset_server: &Res<AssetServer>) -> Handle<Image> {
         match self {
             Self::Banana => asset_server.load("banana.png"),

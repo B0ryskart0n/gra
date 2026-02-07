@@ -1,3 +1,5 @@
+use crate::utils;
+
 use super::*;
 use bevy::prelude::*;
 
@@ -54,7 +56,11 @@ pub fn stage1(
             ));
             parent.spawn((
                 Item::Banana,
-                Sprite::from_image(Item::Banana.image(&asset_server)),
+                utils::image_size_to_sprite(Item::Banana.image(&asset_server), Item::Banana.size()),
+                RigidBody::Dynamic,
+                Collider::rectangle(Item::Banana.size().x, Item::Banana.size().y),
+                CollisionLayers::new(CollisionGroup::Default, CollisionGroup::Terrain),
+                Mass(100.0),
                 Transform::from_translation(Vec3::new(-3.0, 5.0, 0.4)),
             ));
         });
@@ -69,7 +75,7 @@ pub fn door_interaction(
 
     // Copied from item pickup function just to solve the issue of clicking E with no Doors.
     q_door.iter().for_each(|(door_pos, door)| {
-        if player_pos.translation().distance(door_pos.translation()) <= 10.0 {
+        if player_pos.translation().distance(door_pos.translation()) <= 1.0 {
             change_stage_messages.write(ChangeStage(door.0));
         }
     });

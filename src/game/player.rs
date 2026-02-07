@@ -40,7 +40,6 @@ pub fn spawn(mut commands: Commands) {
         Player,
         DashTimer::default(),
         AttackTimer::default(),
-        PlayerInput::default(),
         Health(PLAYER_MAX_HEALTH),
         Equipment::default(),
         Stats::default(),
@@ -49,6 +48,7 @@ pub fn spawn(mut commands: Commands) {
         Sprite::from_color(Color::WHITE, Vec2::new(1.0, 2.0)),
         (
             RigidBody::Dynamic,
+            AngularInertia::ZERO,
             Collider::rectangle(1.0, 2.0),
             CollidingEntities::default(),
             CollisionLayers::new(
@@ -64,24 +64,24 @@ pub fn update_stats(mut q_player: Query<(&mut Stats, &Equipment)>) -> Result {
     stats.apply_equipment(&eq);
     Ok(())
 }
-// TODO Shouldn't this be bound to handle_state since that uses this input and those could be run in different order?
 /// In case of high frame rate (bigger than `FixedTime` 64Hz), if one swift button press is registered and
 /// that input is overriden in  next schedule run (when the button is already released) and
 /// the `FixedUpdate` schedule did not run, because the two frames were too close to each other,
 /// then the swift input is effectively discarded.
 pub fn handle_input(
+    time_fixed: Res<Time>,
     mouse: Res<ButtonInput<MouseButton>>,
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut q_input: Query<&mut PlayerInput>,
+    mut q_player: Query<(&mut LinearVelocity, &mut PlayerState, &mut DashTimer)>,
 ) -> Result {
-    let mut player_input = q_input.single_mut()?;
+    let (mut velocity, mut state, mut dash_timer) = q_player.single_mut()?;
 
     let left = keyboard.pressed(KeyCode::KeyA);
     let right = keyboard.pressed(KeyCode::KeyD);
     let down = keyboard.pressed(KeyCode::KeyS);
     let up = keyboard.pressed(KeyCode::KeyW);
 
-    player_input.direction = match (left, right, down, up) {
+    let direction = match (left, right, down, up) {
         (false, false, false, false)
         | (true, true, true, true)
         | (true, true, false, false)
@@ -95,18 +95,9 @@ pub fn handle_input(
         (false, false, true, false) | (true, true, true, false) => DIRECTION_DOWN,
         (false, true, true, false) => DIRECTION_DOWNRIGHT,
     };
-
-    player_input.dash = player_input.direction != Vec2::ZERO
+    let dash = direction != Vec2::ZERO
         && keyboard.any_just_pressed(vec![KeyCode::ShiftLeft, KeyCode::Space]);
-    player_input.attack = mouse.pressed(MouseButton::Left);
-
-    Ok(())
-}
-pub fn handle_state(
-    time_fixed: Res<Time>,
-    mut q_player: Query<(&PlayerInput, &mut PlayerState, &mut DashTimer)>,
-) -> Result {
-    let (input, mut state, mut dash_timer) = q_player.single_mut()?;
+    let attack = mouse.pressed(MouseButton::Left);
 
     let dt = time_fixed.delta();
 
@@ -115,14 +106,20 @@ pub fn handle_state(
         dash_timer.0.reset();
     }
     if !state.is_dashing() {
-        *state = match (input.dash, input.attack) {
-            (true, _) => PlayerState::Dashing(input.direction),
+        *state = match (dash, attack) {
+            (true, _) => PlayerState::Dashing(direction),
             (false, true) => PlayerState::Attacking,
             (false, false) => PlayerState::Idle,
         };
     }
 
-    // TODO Add movement
+    velocity.0 += 10.0
+        * dt.as_secs_f32()
+        * match *state {
+            PlayerState::Idle => 1.0 * direction,
+            PlayerState::Attacking => 0.3 * direction,
+            PlayerState::Dashing(direction) => 5.0 * direction,
+        };
     Ok(())
 }
 pub fn visual_state(mut query: Query<(&mut Sprite, &PlayerState), Changed<PlayerState>>) {
@@ -222,12 +219,6 @@ impl Default for AttackTimer {
     fn default() -> Self {
         AttackTimer(Timer::from_seconds(1.0, TimerMode::Once))
     }
-}
-#[derive(Component, Default)]
-pub struct PlayerInput {
-    direction: Vec2,
-    dash: bool,
-    attack: bool,
 }
 #[derive(Component, PartialEq, Default)]
 pub enum PlayerState {
