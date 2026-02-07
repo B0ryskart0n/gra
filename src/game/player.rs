@@ -185,7 +185,6 @@ pub fn attack(
             Sprite::from_color(Color::WHITE, Vec2::from((PROJECTILE_SIZE, PROJECTILE_SIZE))),
             Transform::from_translation(player_position),
             RigidBody::Kinematic,
-            // TODO Use CollisionLayers to have hostile and friendly things in different groups.
             Collider::rectangle(PROJECTILE_SIZE, PROJECTILE_SIZE),
             // TODO When cursor is None then should fire at the direction of Player.
             LinearVelocity(
