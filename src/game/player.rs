@@ -48,6 +48,7 @@ pub fn spawn(mut commands: Commands) {
         Sprite::from_color(Color::WHITE, Vec2::new(1.0, 2.0)),
         (
             RigidBody::Dynamic,
+            // FIXME This can cause issues with NaN values, maybe try a differrent approach
             AngularInertia::ZERO,
             Collider::rectangle(1.0, 2.0),
             CollidingEntities::default(),
