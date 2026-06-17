@@ -1,1 +1,2 @@
-Copyright © 2025 Borys Kopeć
+Copyright © 2026 Borys Kopeć.
+All rights reserved.
