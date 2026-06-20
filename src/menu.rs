@@ -32,6 +32,7 @@ pub fn plugin(app: &mut App) {
         );
 }
 
+// TODO Use Bevy widgets!
 fn main_ui(mut commands: Commands) -> Result {
     commands
         .spawn((ui::typical_parent_node(), DespawnOnExit(MenuSubState::Main)))

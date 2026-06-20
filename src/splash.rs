@@ -11,14 +11,10 @@ pub fn plugin(app: &mut App) {
 struct SplashTimer(Timer);
 
 fn setup(mut commands: Commands, _asset_server: Res<AssetServer>) {
+    commands.spawn((Text::new("Splash screen"), DespawnOnExit(MainState::Splash)));
     commands.spawn((
-        Text2d::new("Splash screen"),
-        TextLayout::new_with_justify(Justify::Center),
-        DespawnOnExit(MainState::Splash),
-    ));
-    commands.spawn((
-        // In the future splash screen should show something for more than 0 seconds.
-        SplashTimer(Timer::from_seconds(0.0, TimerMode::Once)),
+        // In the future splash screen should show something for a longer time.
+        SplashTimer(Timer::from_seconds(0.3, TimerMode::Once)),
         DespawnOnExit(MainState::Splash),
     ));
 }
