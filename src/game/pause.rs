@@ -29,14 +29,7 @@ pub fn spawn_invisible_overlay(mut commands: Commands) {
     commands
         .spawn((
             Name::new("Pause overlay"),
-            Node {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                flex_direction: FlexDirection::Column,
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                ..Node::DEFAULT
-            },
+            crate::utils::ui::typical_parent_node(),
             DespawnOnExit(MainState::Game),
             BackgroundColor(Color::srgba_u8(0, 0, 0, 200)),
             Visibility::Hidden,

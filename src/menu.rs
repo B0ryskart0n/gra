@@ -2,44 +2,60 @@ use super::MainState;
 use crate::settings::UserSettings;
 use crate::utils::ui;
 
+use bevy::input_focus::InputFocus;
+// Prelude exports bevy_ui::widget::Button, but what I'm interested in is actually bevy::ui_widgets::Button
 use bevy::prelude::*;
+use bevy::ui_widgets::Activate;
+use bevy::ui_widgets::Button;
+use bevy::ui_widgets::UiWidgetsPlugins;
+use bevy::ui_widgets::observe;
 
 pub fn plugin(app: &mut App) {
-    app.add_sub_state::<MenuSubState>()
+    app.add_plugins(UiWidgetsPlugins)
+        .init_resource::<InputFocus>() // Resource required for UiWidgetsPlugins
+        .add_sub_state::<MenuSubState>()
         .add_systems(OnEnter(MenuSubState::Main), main_ui)
-        .add_systems(
-            Update,
-            (
-                handle_keyboard,
-                handle_game_button,
-                handle_settings_button,
-                handle_exit_button,
-            )
-                .run_if(in_state(MenuSubState::Main)),
-        )
+        .add_systems(Update, handle_keyboard.run_if(in_state(MenuSubState::Main)))
+        .add_systems(Update, update_interacted_buttons_display)
         .add_systems(OnEnter(MenuSubState::Settings), settings_ui)
         .add_systems(
             Update,
-            (
-                update_window_mode_text,
-                update_resolution_text,
-                handle_menu_button,
-                handle_apply_button,
-                handle_resolution_button,
-                handle_window_mode_button,
-            )
+            (update_window_mode_text, update_resolution_text)
                 .run_if(in_state(MenuSubState::Settings)),
         );
 }
 
-// TODO Use Bevy widgets!
 fn main_ui(mut commands: Commands) -> Result {
     commands
         .spawn((ui::typical_parent_node(), DespawnOnExit(MenuSubState::Main)))
         .with_children(|parent| {
-            parent.spawn((GameButton, Text::new("Play")));
-            parent.spawn((SettingsButton, Text::new("Settings")));
-            parent.spawn((ExitButton, Text::new("Exit")));
+            parent.spawn((
+                MyButton,
+                Text::new("Play"),
+                observe(
+                    |_: On<Activate>, mut next_state: ResMut<NextState<MainState>>| {
+                        next_state.set(MainState::Game)
+                    },
+                ),
+            ));
+            parent.spawn((
+                MyButton,
+                Text::new("Settings"),
+                observe(
+                    |_: On<Activate>, mut next_substate: ResMut<NextState<MenuSubState>>| {
+                        next_substate.set(MenuSubState::Settings)
+                    },
+                ),
+            ));
+            parent.spawn((
+                MyButton,
+                Text::new("Exit"),
+                observe(
+                    |_: On<Activate>, mut exit_messages: MessageWriter<AppExit>| {
+                        exit_messages.write_default();
+                    },
+                ),
+            ));
         });
     Ok(())
 }
@@ -70,7 +86,15 @@ fn settings_ui(mut commands: Commands) {
                             ..Default::default()
                         })
                         .with_children(|parent| {
-                            parent.spawn((ResolutionButton, Text::new("Resolution")));
+                            parent.spawn((
+                                MyButton,
+                                Text::new("Resolution"),
+                                observe(
+                                    |_: On<Activate>, mut user_settings: ResMut<UserSettings>| {
+                                        user_settings.window.cycle_res()
+                                    },
+                                ),
+                            ));
                             parent.spawn((ResolutionText, Text::default()));
                         });
                     parent
@@ -83,7 +107,15 @@ fn settings_ui(mut commands: Commands) {
                             ..Default::default()
                         })
                         .with_children(|parent| {
-                            parent.spawn((WindowModeButton, Text::new("Window Mode")));
+                            parent.spawn((
+                                MyButton,
+                                Text::new("Window Mode"),
+                                observe(
+                                    |_: On<Activate>, mut user_settings: ResMut<UserSettings>| {
+                                        user_settings.window.cycle_mode()
+                                    },
+                                ),
+                            ));
                             parent.spawn((WindowModeText, Text::default()));
                         });
                 });
@@ -94,8 +126,28 @@ fn settings_ui(mut commands: Commands) {
                     ..Default::default()
                 })
                 .with_children(|parent| {
-                    parent.spawn((MenuButton, Text::new("Menu")));
-                    parent.spawn((ApplyButton, Text::new("Apply")));
+                    parent.spawn((
+                        MyButton,
+                        Text::new("Menu"),
+                        observe(
+                            |_: On<Activate>, mut next_substate: ResMut<NextState<MenuSubState>>| {
+                                next_substate.set(MenuSubState::Main)
+                            },
+                        ),
+                    ));
+                    parent.spawn((
+                        MyButton,
+                        Text::new("Apply"),
+                        observe(
+                            |_: On<Activate>,
+                             mut q_window: Query<&mut Window>,
+                             user_settings: Res<UserSettings>| {
+                                let mut window =
+                                    q_window.single_mut().expect("there should be one window");
+                                user_settings.window.update_bevy_window(&mut window);
+                            },
+                        ),
+                    ));
                 });
         });
 }
@@ -114,77 +166,17 @@ fn handle_keyboard(
     }
 }
 
-// TODO Consider tying those functions with specific Buttons and running a big system that queries all buttons and processes their statuses.
-fn handle_game_button(
-    mut q_button: Query<
-        (&Interaction, &mut BackgroundColor),
-        (With<GameButton>, Changed<Interaction>),
-    >,
-    mut next_state: ResMut<NextState<MainState>>,
-) -> Result {
-    ui::button_interaction(q_button.single_mut(), || next_state.set(MainState::Game));
-    Ok(())
-}
-fn handle_settings_button(
-    mut q_button: Query<(&Interaction, &mut BackgroundColor), With<SettingsButton>>,
-    mut next_substate: ResMut<NextState<MenuSubState>>,
+fn update_interacted_buttons_display(
+    mut q_buttons: Query<(&Interaction, &mut BackgroundColor), Changed<Interaction>>,
 ) {
-    ui::button_interaction(q_button.single_mut(), || {
-        next_substate.set(MenuSubState::Settings)
+    q_buttons.iter_mut().for_each(|(interaction, mut color)| {
+        // if let Ok((interaction, mut color)) = button_query_result {
+        *color = match interaction {
+            Interaction::None => BackgroundColor::DEFAULT,
+            Interaction::Hovered => BackgroundColor(Color::srgb(0.5, 0.5, 0.5)),
+            Interaction::Pressed => BackgroundColor(Color::srgb(0.5, 1.0, 0.5)),
+        };
     });
-}
-fn handle_menu_button(
-    mut q_button: Query<
-        (&Interaction, &mut BackgroundColor),
-        (With<MenuButton>, Changed<Interaction>),
-    >,
-    mut next_substate: ResMut<NextState<MenuSubState>>,
-) {
-    ui::button_interaction(q_button.single_mut(), || {
-        next_substate.set(MenuSubState::Main)
-    });
-}
-fn handle_exit_button(
-    mut q_button: Query<(&Interaction, &mut BackgroundColor), With<ExitButton>>,
-    mut exit_messages: MessageWriter<AppExit>,
-) {
-    ui::button_interaction(q_button.single_mut(), || {
-        exit_messages.write_default();
-    });
-}
-// TODO There is no coming back from setting the resolution too big,
-// let's introduce a mechanism to fallback to previous settings.
-fn handle_apply_button(
-    mut q_button: Query<
-        (&Interaction, &mut BackgroundColor),
-        (With<ApplyButton>, Changed<Interaction>),
-    >,
-    mut q_window: Query<&mut Window>,
-    user_settings: Res<UserSettings>,
-) -> Result {
-    let mut window = q_window.single_mut()?;
-    ui::button_interaction(q_button.single_mut(), || {
-        user_settings.window.update_bevy_window(&mut window);
-    });
-    Ok(())
-}
-fn handle_resolution_button(
-    mut q_button: Query<
-        (&Interaction, &mut BackgroundColor),
-        (With<ResolutionButton>, Changed<Interaction>),
-    >,
-    mut user_settings: ResMut<UserSettings>,
-) {
-    ui::button_interaction(q_button.single_mut(), || user_settings.window.cycle_res());
-}
-fn handle_window_mode_button(
-    mut q_button: Query<
-        (&Interaction, &mut BackgroundColor),
-        (With<WindowModeButton>, Changed<Interaction>),
-    >,
-    mut user_settings: ResMut<UserSettings>,
-) {
-    ui::button_interaction(q_button.single_mut(), || user_settings.window.cycle_mode());
 }
 
 fn update_window_mode_text(
@@ -211,26 +203,8 @@ enum MenuSubState {
 }
 
 #[derive(Component)]
-#[require(ui::ButtonWithBackground)]
-struct GameButton;
-#[derive(Component)]
-#[require(ui::ButtonWithBackground)]
-struct SettingsButton;
-#[derive(Component)]
-#[require(ui::ButtonWithBackground)]
-struct ExitButton;
-#[derive(Component)]
-#[require(ui::ButtonWithBackground)]
-struct ApplyButton;
-#[derive(Component)]
-#[require(ui::ButtonWithBackground)]
-struct MenuButton;
-#[derive(Component)]
-#[require(ui::ButtonWithBackground)]
-struct ResolutionButton;
-#[derive(Component)]
-#[require(ui::ButtonWithBackground)]
-struct WindowModeButton;
+#[require(Interaction, Button, BackgroundColor)]
+struct MyButton;
 
 #[derive(Component)]
 struct ResolutionText;

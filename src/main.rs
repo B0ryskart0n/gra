@@ -30,6 +30,7 @@ fn main() {
                     ..default()
                 }),
         )
+        //.insert_resource(UiDebugOptions { enabled: true, ..default() }) // Draws debug borders of Nodes, requires `bevy_ui_debug` feature
         //.add_plugins(bevy_inspector_egui::bevy_egui::EguiPlugin::default())
         //.add_plugins(bevy_inspector_egui::quick::WorldInspectorPlugin::default())
         // Needs to be done after StatesPlugin (part of DefaultPlugins)
@@ -57,6 +58,7 @@ fn startup(mut commands: Commands) {
 #[derive(Component, Default)]
 struct Cursor(Option<Vec2>);
 
+// TODO Consider adding state `Exiting` that will send the AppExit Message. This will be benefitial when there is any other logic to do when exiting the game.
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
 #[states(scoped_entities)]
 enum MainState {
