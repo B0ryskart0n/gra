@@ -10,6 +10,7 @@ use crate::METERS_PER_PIXEL;
 use crate::MainState;
 use crate::PIXELS_PER_METER;
 use crate::utils::Lifetime;
+
 use avian2d::prelude::*;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
@@ -191,6 +192,7 @@ struct Projectile;
 struct Player;
 #[derive(Component)]
 struct Enemy;
+// TODO Is Health part of Stats? Maybe create a special PlayerStats to extend on Health
 #[derive(Component)]
 struct Stats {
     max_health: f32,

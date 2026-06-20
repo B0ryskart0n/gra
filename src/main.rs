@@ -1,11 +1,11 @@
-use bevy::prelude::*;
-
 mod assets;
 mod game;
 mod menu;
 mod settings;
 mod splash;
 mod utils;
+
+use bevy::prelude::*;
 
 // Important for perspective and sprite scaling
 const PIXELS_PER_METER: f32 = 16.0;

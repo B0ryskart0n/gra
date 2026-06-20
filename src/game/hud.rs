@@ -1,7 +1,11 @@
-use bevy::prelude::*;
-
-use super::*;
+use super::Equipment;
+use super::Health;
+use super::Player;
+use super::Run;
+use super::Stats;
 use crate::MainState;
+
+use bevy::prelude::*;
 
 pub fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands

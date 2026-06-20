@@ -1,6 +1,12 @@
+use super::ChangeStage;
+use super::CollisionGroup;
+use super::EnemySpawner;
+use super::Item;
+use super::MainState;
+use super::Player;
 use crate::utils;
 
-use super::*;
+use avian2d::prelude::*;
 use bevy::prelude::*;
 
 pub fn stage0(q_stages: Query<Entity, With<Stage>>, mut commands: Commands) {

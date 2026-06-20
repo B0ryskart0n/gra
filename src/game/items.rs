@@ -1,4 +1,8 @@
-use super::*;
+use super::Equipment;
+use super::Item;
+use super::ItemPickup;
+use super::Player;
+
 use bevy::prelude::*;
 use std::cmp::Ordering;
 

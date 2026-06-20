@@ -1,9 +1,18 @@
-use super::*;
-
+use super::CollisionGroup;
+use super::Enemy;
+use super::Equipment;
+use super::Health;
+use super::PLAYER_MAX_HEALTH;
+use super::Player;
+use super::PlayerDamage;
+use super::PlayerDeath;
+use super::Projectile;
+use super::Stats;
 use crate::Cursor;
 use crate::METERS_PER_PIXEL;
 use crate::MainState;
-use crate::utils::*;
+use crate::utils::Lifetime;
+
 use avian2d::prelude::*;
 use bevy::prelude::*;
 use std::f32::consts::FRAC_1_SQRT_2;

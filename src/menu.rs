@@ -1,6 +1,7 @@
 use super::MainState;
 use crate::settings::UserSettings;
-use crate::utils::ui::*;
+use crate::utils::ui;
+
 use bevy::prelude::*;
 
 pub fn plugin(app: &mut App) {
@@ -33,7 +34,7 @@ pub fn plugin(app: &mut App) {
 
 fn main_ui(mut commands: Commands) -> Result {
     commands
-        .spawn((typical_parent_node(), DespawnOnExit(MenuSubState::Main)))
+        .spawn((ui::typical_parent_node(), DespawnOnExit(MenuSubState::Main)))
         .with_children(|parent| {
             parent.spawn((GameButton, Text::new("Play")));
             parent.spawn((SettingsButton, Text::new("Settings")));
@@ -43,7 +44,10 @@ fn main_ui(mut commands: Commands) -> Result {
 }
 fn settings_ui(mut commands: Commands) {
     commands
-        .spawn((typical_parent_node(), DespawnOnExit(MenuSubState::Settings)))
+        .spawn((
+            ui::typical_parent_node(),
+            DespawnOnExit(MenuSubState::Settings),
+        ))
         .with_children(|parent| {
             parent
                 .spawn(Node {
@@ -117,14 +121,14 @@ fn handle_game_button(
     >,
     mut next_state: ResMut<NextState<MainState>>,
 ) -> Result {
-    button_interaction(q_button.single_mut(), || next_state.set(MainState::Game));
+    ui::button_interaction(q_button.single_mut(), || next_state.set(MainState::Game));
     Ok(())
 }
 fn handle_settings_button(
     mut q_button: Query<(&Interaction, &mut BackgroundColor), With<SettingsButton>>,
     mut next_substate: ResMut<NextState<MenuSubState>>,
 ) {
-    button_interaction(q_button.single_mut(), || {
+    ui::button_interaction(q_button.single_mut(), || {
         next_substate.set(MenuSubState::Settings)
     });
 }
@@ -135,7 +139,7 @@ fn handle_menu_button(
     >,
     mut next_substate: ResMut<NextState<MenuSubState>>,
 ) {
-    button_interaction(q_button.single_mut(), || {
+    ui::button_interaction(q_button.single_mut(), || {
         next_substate.set(MenuSubState::Main)
     });
 }
@@ -143,7 +147,7 @@ fn handle_exit_button(
     mut q_button: Query<(&Interaction, &mut BackgroundColor), With<ExitButton>>,
     mut exit_messages: MessageWriter<AppExit>,
 ) {
-    button_interaction(q_button.single_mut(), || {
+    ui::button_interaction(q_button.single_mut(), || {
         exit_messages.write_default();
     });
 }
@@ -158,7 +162,7 @@ fn handle_apply_button(
     user_settings: Res<UserSettings>,
 ) -> Result {
     let mut window = q_window.single_mut()?;
-    button_interaction(q_button.single_mut(), || {
+    ui::button_interaction(q_button.single_mut(), || {
         user_settings.window.update_bevy_window(&mut window);
     });
     Ok(())
@@ -170,7 +174,7 @@ fn handle_resolution_button(
     >,
     mut user_settings: ResMut<UserSettings>,
 ) {
-    button_interaction(q_button.single_mut(), || user_settings.window.cycle_res());
+    ui::button_interaction(q_button.single_mut(), || user_settings.window.cycle_res());
 }
 fn handle_window_mode_button(
     mut q_button: Query<
@@ -179,7 +183,7 @@ fn handle_window_mode_button(
     >,
     mut user_settings: ResMut<UserSettings>,
 ) {
-    button_interaction(q_button.single_mut(), || user_settings.window.cycle_mode());
+    ui::button_interaction(q_button.single_mut(), || user_settings.window.cycle_mode());
 }
 
 fn update_window_mode_text(
@@ -206,25 +210,25 @@ enum MenuSubState {
 }
 
 #[derive(Component)]
-#[require(ButtonWithBackground)]
+#[require(ui::ButtonWithBackground)]
 struct GameButton;
 #[derive(Component)]
-#[require(ButtonWithBackground)]
+#[require(ui::ButtonWithBackground)]
 struct SettingsButton;
 #[derive(Component)]
-#[require(ButtonWithBackground)]
+#[require(ui::ButtonWithBackground)]
 struct ExitButton;
 #[derive(Component)]
-#[require(ButtonWithBackground)]
+#[require(ui::ButtonWithBackground)]
 struct ApplyButton;
 #[derive(Component)]
-#[require(ButtonWithBackground)]
+#[require(ui::ButtonWithBackground)]
 struct MenuButton;
 #[derive(Component)]
-#[require(ButtonWithBackground)]
+#[require(ui::ButtonWithBackground)]
 struct ResolutionButton;
 #[derive(Component)]
-#[require(ButtonWithBackground)]
+#[require(ui::ButtonWithBackground)]
 struct WindowModeButton;
 
 #[derive(Component)]
