@@ -1,4 +1,3 @@
-use super::MainState;
 use crate::settings::UserSettings;
 use crate::utils::ui;
 
@@ -9,9 +8,8 @@ use bevy::ui_widgets::Button;
 use bevy::ui_widgets::observe;
 
 pub fn plugin(app: &mut App) {
-    app.add_sub_state::<MenuSubState>()
+    app.init_state::<MenuSubState>()
         .add_systems(OnEnter(MenuSubState::Main), main_ui)
-        .add_systems(Update, handle_keyboard.run_if(in_state(MenuSubState::Main)))
         .add_systems(Update, update_interacted_buttons_display)
         .add_systems(OnEnter(MenuSubState::Settings), settings_ui)
         .add_systems(
@@ -27,28 +25,11 @@ fn main_ui(mut commands: Commands) -> Result {
         .with_children(|parent| {
             parent.spawn((
                 MyButton,
-                Text::new("Play"),
-                observe(
-                    |_: On<Activate>, mut next_state: ResMut<NextState<MainState>>| {
-                        next_state.set(MainState::Game)
-                    },
-                ),
-            ));
-            parent.spawn((
-                MyButton,
                 Text::new("Settings"),
                 observe(
                     |_: On<Activate>, mut next_substate: ResMut<NextState<MenuSubState>>| {
+                        info!("Settings");
                         next_substate.set(MenuSubState::Settings)
-                    },
-                ),
-            ));
-            parent.spawn((
-                MyButton,
-                Text::new("Exit"),
-                observe(
-                    |_: On<Activate>, mut exit_messages: MessageWriter<AppExit>| {
-                        exit_messages.write_default();
                     },
                 ),
             ));
@@ -87,6 +68,7 @@ fn settings_ui(mut commands: Commands) {
                                 Text::new("Resolution"),
                                 observe(
                                     |_: On<Activate>, mut user_settings: ResMut<UserSettings>| {
+                                        info!("Resolution");
                                         user_settings.window.cycle_res()
                                     },
                                 ),
@@ -108,6 +90,7 @@ fn settings_ui(mut commands: Commands) {
                                 Text::new("Window Mode"),
                                 observe(
                                     |_: On<Activate>, mut user_settings: ResMut<UserSettings>| {
+                                        info!("Window");
                                         user_settings.window.cycle_mode()
                                     },
                                 ),
@@ -127,6 +110,7 @@ fn settings_ui(mut commands: Commands) {
                         Text::new("Menu"),
                         observe(
                             |_: On<Activate>, mut next_substate: ResMut<NextState<MenuSubState>>| {
+                                info!("Menu");
                                 next_substate.set(MenuSubState::Main)
                             },
                         ),
@@ -138,26 +122,13 @@ fn settings_ui(mut commands: Commands) {
                             |_: On<Activate>,
                              q_window: Query<&mut Window>,
                              user_settings: Res<UserSettings>| {
+                                info!("Apply");
                                 user_settings.apply_settings(q_window);
                             },
                         ),
                     ));
                 });
         });
-}
-
-// Meant only for the main menu, should not be run in sub-menus.
-fn handle_keyboard(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut next_state: ResMut<NextState<MainState>>,
-    mut next_substate: ResMut<NextState<MenuSubState>>,
-) {
-    if keyboard.just_pressed(KeyCode::Enter) {
-        next_state.set(MainState::Game);
-    }
-    if keyboard.just_pressed(KeyCode::Escape) {
-        next_substate.set(MenuSubState::Settings);
-    }
 }
 
 fn update_interacted_buttons_display(
@@ -188,8 +159,7 @@ fn update_resolution_text(
     Ok(())
 }
 
-#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, SubStates)]
-#[source(MainState = MainState::Menu)]
+#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
 enum MenuSubState {
     #[default]
     Main,
