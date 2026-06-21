@@ -1,11 +1,13 @@
-use crate::settings::UserSettings;
 use crate::utils::ui;
 
+const HD_WIDTH: u32 = 1280;
+const HD_HEIGHT: u32 = 720;
 // Prelude exports bevy_ui::widget::Button, but what I'm interested in is actually bevy::ui_widgets::Button
 use bevy::prelude::*;
 use bevy::ui_widgets::Activate;
 use bevy::ui_widgets::Button;
 use bevy::ui_widgets::observe;
+use bevy::window::WindowMode;
 
 pub fn plugin(app: &mut App) {
     app.init_state::<MenuSubState>()
@@ -66,14 +68,16 @@ fn settings_ui(mut commands: Commands) {
                     parent.spawn((
                         MyButton,
                         Text::new("Apply"),
-                        observe(
-                            |_: On<Activate>,
-                             q_window: Query<&mut Window>,
-                             user_settings: Res<UserSettings>| {
-                                info!("Apply");
-                                user_settings.apply_settings(q_window);
-                            },
-                        ),
+                        observe(|_: On<Activate>, mut q_window: Query<&mut Window>| {
+                            info!("Apply");
+                            let mut bevy_window =
+                                q_window.single_mut().expect("expected exactly one window");
+                            bevy_window.mode = WindowMode::Windowed;
+                            bevy_window
+                                .resolution
+                                .set_physical_resolution(HD_WIDTH, HD_HEIGHT);
+                            bevy_window.resolution.set_scale_factor(2.0);
+                        }),
                     ));
                 });
         });
