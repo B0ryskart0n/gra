@@ -11,12 +11,7 @@ pub fn plugin(app: &mut App) {
     app.init_state::<MenuSubState>()
         .add_systems(OnEnter(MenuSubState::Main), main_ui)
         .add_systems(Update, update_interacted_buttons_display)
-        .add_systems(OnEnter(MenuSubState::Settings), settings_ui)
-        .add_systems(
-            Update,
-            (update_window_mode_text, update_resolution_text)
-                .run_if(in_state(MenuSubState::Settings)),
-        );
+        .add_systems(OnEnter(MenuSubState::Settings), settings_ui);
 }
 
 fn main_ui(mut commands: Commands) -> Result {
@@ -43,61 +38,14 @@ fn settings_ui(mut commands: Commands) {
             DespawnOnExit(MenuSubState::Settings),
         ))
         .with_children(|parent| {
-            parent
-                .spawn(Node {
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(80.0),
-                    flex_direction: FlexDirection::Column,
-                    justify_content: JustifyContent::FlexStart,
-                    align_items: AlignItems::Center,
-                    ..Default::default()
-                })
-                .with_children(|parent| {
-                    parent
-                        .spawn(Node {
-                            width: Val::Percent(40.0),
-                            height: Val::Auto,
-                            flex_direction: FlexDirection::Row,
-                            justify_content: JustifyContent::SpaceBetween,
-                            align_items: AlignItems::Default,
-                            ..Default::default()
-                        })
-                        .with_children(|parent| {
-                            parent.spawn((
-                                MyButton,
-                                Text::new("Resolution"),
-                                observe(
-                                    |_: On<Activate>, mut user_settings: ResMut<UserSettings>| {
-                                        info!("Resolution");
-                                        user_settings.window.cycle_res()
-                                    },
-                                ),
-                            ));
-                            parent.spawn((ResolutionText, Text::default()));
-                        });
-                    parent
-                        .spawn(Node {
-                            width: Val::Percent(40.0),
-                            height: Val::Auto,
-                            flex_direction: FlexDirection::Row,
-                            justify_content: JustifyContent::SpaceBetween,
-                            align_items: AlignItems::Default,
-                            ..Default::default()
-                        })
-                        .with_children(|parent| {
-                            parent.spawn((
-                                MyButton,
-                                Text::new("Window Mode"),
-                                observe(
-                                    |_: On<Activate>, mut user_settings: ResMut<UserSettings>| {
-                                        info!("Window");
-                                        user_settings.window.cycle_mode()
-                                    },
-                                ),
-                            ));
-                            parent.spawn((WindowModeText, Text::default()));
-                        });
-                });
+            parent.spawn(Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(80.0),
+                flex_direction: FlexDirection::Column,
+                justify_content: JustifyContent::FlexStart,
+                align_items: AlignItems::Center,
+                ..Default::default()
+            });
             parent
                 .spawn(Node {
                     width: Val::Percent(100.0),
@@ -135,28 +83,12 @@ fn update_interacted_buttons_display(
     mut q_buttons: Query<(&Interaction, &mut BackgroundColor), Changed<Interaction>>,
 ) {
     q_buttons.iter_mut().for_each(|(interaction, mut color)| {
-        // if let Ok((interaction, mut color)) = button_query_result {
         *color = match interaction {
             Interaction::None => BackgroundColor::DEFAULT,
             Interaction::Hovered => BackgroundColor(Color::srgb(0.5, 0.5, 0.5)),
             Interaction::Pressed => BackgroundColor(Color::srgb(0.5, 1.0, 0.5)),
         };
     });
-}
-
-fn update_window_mode_text(
-    mut q_window_mode: Query<&mut Text, With<WindowModeText>>,
-    user_settings: Res<UserSettings>,
-) -> Result {
-    q_window_mode.single_mut()?.0 = user_settings.window.mode_str();
-    Ok(())
-}
-fn update_resolution_text(
-    mut q_resolution: Query<&mut Text, With<ResolutionText>>,
-    user_settings: Res<UserSettings>,
-) -> Result {
-    q_resolution.single_mut()?.0 = user_settings.window.res_str();
-    Ok(())
 }
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
@@ -169,8 +101,3 @@ enum MenuSubState {
 #[derive(Component)]
 #[require(Interaction, Button, BackgroundColor)]
 struct MyButton;
-
-#[derive(Component)]
-struct ResolutionText;
-#[derive(Component)]
-struct WindowModeText;
