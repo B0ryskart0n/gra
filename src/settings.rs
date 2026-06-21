@@ -2,7 +2,6 @@
 
 use bevy::prelude::*;
 use bevy::window::WindowMode;
-use bevy::window::WindowResolution;
 
 const LOGICAL_WIDTH: u32 = 640;
 const LOGICAL_HEIGHT: u32 = 360;
@@ -14,19 +13,23 @@ const QHD_WIDTH: u32 = 2560;
 const QHD_HEIGHT: u32 = 1440;
 
 pub fn plugin(app: &mut App) {
-    app.init_resource::<UserSettings>();
+    app.init_resource::<UserSettings>()
+        .add_systems(PostStartup, apply_initial_settings);
+}
+fn apply_initial_settings(user_settings: Res<UserSettings>, q_window: Query<&mut Window>) {
+    user_settings.apply_settings(q_window);
 }
 
-// TODO At launch, the window settings will not be in sync with bevy default.
-// TODO Add loading last settings and falling back to creating defaults from system settings.
-// TODO Create a mechanism for synchronizing with bevy settings to avoid desynchronization.
-// As those settings grow, it might be good to do a round trip. Something like:
-// `bevy_window = user_window.to_bevy(); user_window = bevy_window.to_user();` or maybe use the Reflect trait?
 #[derive(Debug, Resource, Default)]
 pub struct UserSettings {
     pub window: WindowSettings,
 }
-// TODO Take Monitor information into account when determining resoltuions.
+impl UserSettings {
+    pub fn apply_settings(&self, mut q_window: Query<&mut Window>) {
+        let mut bevy_window = q_window.single_mut().expect("expected exactly one window");
+        self.window.apply_window_settings(&mut bevy_window);
+    }
+}
 #[derive(Debug)]
 pub enum WindowSettings {
     Windowed(Resolution),
@@ -38,17 +41,19 @@ impl Default for WindowSettings {
     }
 }
 impl WindowSettings {
-    pub fn update_bevy_window(&self, bevy_window: &mut Window) {
-        bevy_window.mode = match self {
-            Self::Windowed(_) => WindowMode::Windowed,
-            // TODO Find largest resolution that fits in monitor and fill with black bars if needed.
-            Self::Borderless => WindowMode::BorderlessFullscreen(MonitorSelection::Current),
-        };
-
-        // No need to touch the resolution if not in Windowed.
-        if let Self::Windowed(resolution) = self {
-            bevy_window.resolution = WindowResolution::from(resolution.pixels())
-                .with_scale_factor_override(resolution.scale());
+    pub fn apply_window_settings(&self, bevy_window: &mut Window) {
+        match self {
+            Self::Windowed(resolution) => {
+                bevy_window.mode = WindowMode::Windowed;
+                bevy_window
+                    .resolution
+                    .set_physical_resolution(resolution.x(), resolution.y());
+                bevy_window.resolution.set_scale_factor(resolution.scale());
+            }
+            Self::Borderless => {
+                bevy_window.mode = WindowMode::BorderlessFullscreen(MonitorSelection::Current);
+                // TODO Set resolution based on the physical resolution. Should create black bars when not scaled by integer
+            }
         }
     }
     pub fn cycle_mode(&mut self) {
@@ -79,8 +84,8 @@ impl WindowSettings {
 
 #[derive(Default, Debug)]
 pub enum Resolution {
-    #[default]
     Logical,
+    #[default]
     HD,
     FullHD,
     QHD,
@@ -94,12 +99,20 @@ impl Resolution {
             Self::QHD => 4.0,
         }
     }
-    fn pixels(&self) -> [u32; 2] {
+    fn x(&self) -> u32 {
         match self {
-            Self::Logical => [LOGICAL_WIDTH, LOGICAL_HEIGHT],
-            Self::HD => [HD_WIDTH, HD_HEIGHT],
-            Self::FullHD => [FULLHD_WIDTH, FULLHD_HEIGHT],
-            Self::QHD => [QHD_WIDTH, QHD_HEIGHT],
+            Self::Logical => LOGICAL_WIDTH,
+            Self::HD => HD_WIDTH,
+            Self::FullHD => FULLHD_WIDTH,
+            Self::QHD => QHD_WIDTH,
+        }
+    }
+    fn y(&self) -> u32 {
+        match self {
+            Self::Logical => LOGICAL_HEIGHT,
+            Self::HD => HD_HEIGHT,
+            Self::FullHD => FULLHD_HEIGHT,
+            Self::QHD => QHD_HEIGHT,
         }
     }
     fn cycle(&mut self) {
@@ -113,6 +126,6 @@ impl Resolution {
 }
 impl std::fmt::Display for Resolution {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{} * {}", self.pixels()[0], self.pixels()[1])
+        write!(f, "{} * {}", self.x(), self.y())
     }
 }

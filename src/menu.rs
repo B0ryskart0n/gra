@@ -136,11 +136,9 @@ fn settings_ui(mut commands: Commands) {
                         Text::new("Apply"),
                         observe(
                             |_: On<Activate>,
-                             mut q_window: Query<&mut Window>,
+                             q_window: Query<&mut Window>,
                              user_settings: Res<UserSettings>| {
-                                let mut window =
-                                    q_window.single_mut().expect("there should be one window");
-                                user_settings.window.update_bevy_window(&mut window);
+                                user_settings.apply_settings(q_window);
                             },
                         ),
                     ));

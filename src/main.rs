@@ -17,13 +17,8 @@ fn main() {
         .add_plugins(
             DefaultPlugins
                 .set(ImagePlugin::default_nearest())
-                // FIXME I suspect there is a bug in wayland/hyprland and changing the resolution after window creation is problematic.
-                // Therefore set the resolution here to a reasonable value to work with.
-                // Let's leave this issue for now. Maybe it will get fixed in the meantime.
                 .set(WindowPlugin {
                     primary_window: Some(Window {
-                        resolution: bevy::window::WindowResolution::new(1280, 720)
-                            .with_scale_factor_override(2.0),
                         resizable: false,
                         ..default()
                     }),
