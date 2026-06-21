@@ -16,5 +16,5 @@ opt-level = 3
 avian2d = {version = "0.7" }
 # Since there is no option to specify profile-specific dependency features, the dynamic_linking and dev is specified here.
 # Needs to be removed for prod builds.
-bevy = { version = "0.19", default-features = false, features = ["2d", "ui", "dynamic_linking", "dev"] }
-bevy-inspector-egui = {version = "0.36.0"}
+bevy = { version = "0.19", default-features = false, features = ["2d", "ui", "dynamic_linking", "dev", "bevy_ui_debug"] }
+bevy-inspector-egui = {version = "0.37.0"}
