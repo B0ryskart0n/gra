@@ -80,7 +80,8 @@ pub fn game_plugin(app: &mut App) {
                 pause::toggle.run_if(input_just_pressed(KeyCode::Escape)),
                 player::visual_state,
                 update_run,
-                exit_game.run_if(input_just_pressed(KeyCode::F4).or(on_message::<PlayerDeath>)),
+                exit_game
+                    .run_if(input_just_pressed(KeyCode::F4).or_else(on_message::<PlayerDeath>)),
                 player::update_stats.run_if(on_message::<ItemPickup>),
                 stages::door_interaction.run_if(input_just_pressed(KeyCode::KeyE)),
                 items::pickup.run_if(input_just_pressed(KeyCode::KeyE)),

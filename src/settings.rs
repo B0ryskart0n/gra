@@ -1,3 +1,5 @@
+// TODO Use Bevy settings
+
 use bevy::prelude::*;
 use bevy::window::WindowMode;
 use bevy::window::WindowResolution;

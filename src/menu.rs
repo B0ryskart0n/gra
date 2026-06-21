@@ -2,18 +2,14 @@ use super::MainState;
 use crate::settings::UserSettings;
 use crate::utils::ui;
 
-use bevy::input_focus::InputFocus;
 // Prelude exports bevy_ui::widget::Button, but what I'm interested in is actually bevy::ui_widgets::Button
 use bevy::prelude::*;
 use bevy::ui_widgets::Activate;
 use bevy::ui_widgets::Button;
-use bevy::ui_widgets::UiWidgetsPlugins;
 use bevy::ui_widgets::observe;
 
 pub fn plugin(app: &mut App) {
-    app.add_plugins(UiWidgetsPlugins)
-        .init_resource::<InputFocus>() // Resource required for UiWidgetsPlugins
-        .add_sub_state::<MenuSubState>()
+    app.add_sub_state::<MenuSubState>()
         .add_systems(OnEnter(MenuSubState::Main), main_ui)
         .add_systems(Update, handle_keyboard.run_if(in_state(MenuSubState::Main)))
         .add_systems(Update, update_interacted_buttons_display)
