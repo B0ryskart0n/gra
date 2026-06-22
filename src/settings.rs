@@ -44,6 +44,7 @@ impl WindowSettings {
     pub fn apply_window_settings(&self, bevy_window: &mut Window) {
         match self {
             Self::Windowed(resolution) => {
+                // TODO This whole logic seems to depend very much on the windowing backend. In principle scale_override should be the one used, but it's not working here. Consider switching to another way of achieving perfect scaling of the game regardless of resolution. WTF is happening here!
                 bevy_window.mode = WindowMode::Windowed;
                 bevy_window
                     .resolution
@@ -84,8 +85,8 @@ impl WindowSettings {
 
 #[derive(Default, Debug)]
 pub enum Resolution {
-    Logical,
     #[default]
+    Logical,
     HD,
     FullHD,
     QHD,
