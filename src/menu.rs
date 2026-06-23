@@ -164,7 +164,6 @@ fn update_interacted_buttons_display(
     mut q_buttons: Query<(&Interaction, &mut BackgroundColor), Changed<Interaction>>,
 ) {
     q_buttons.iter_mut().for_each(|(interaction, mut color)| {
-        // if let Ok((interaction, mut color)) = button_query_result {
         *color = match interaction {
             Interaction::None => BackgroundColor::DEFAULT,
             Interaction::Hovered => BackgroundColor(Color::srgb(0.5, 0.5, 0.5)),
