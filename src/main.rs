@@ -19,6 +19,10 @@ fn main() {
 fn startup(mut commands: Commands) {
     commands.spawn(Camera2d);
     commands.spawn(Text::default());
+    commands.spawn((
+        Text2d::new("I'm at [0, -180]"),
+        Transform::from_translation(vec3(0.0, -180.0, 0.0)),
+    ));
 }
 fn reset_resolution(mut q_window: Query<&mut Window>) {
     let mut bevy_window = q_window.single_mut().unwrap();
