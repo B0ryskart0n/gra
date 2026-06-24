@@ -9,8 +9,9 @@ fn main() {
             Update,
             (
                 update_resolution_text,
-                change_resolution.run_if(input_just_pressed(KeyCode::Space)),
-                reset_resolution.run_if(input_just_pressed(KeyCode::Escape)),
+                reset_window.run_if(input_just_pressed(KeyCode::Digit0)),
+                change_base_scale.run_if(input_just_pressed(KeyCode::Digit1)),
+                change_scale_override.run_if(input_just_pressed(KeyCode::Digit2)),
             ),
         )
         .run();
@@ -19,21 +20,28 @@ fn main() {
 fn startup(mut commands: Commands) {
     commands.spawn(Camera2d);
     commands.spawn(Text::default());
+    // Visual check of the actual logical resolution.
+    // In 640x360 this text should be at the lower boundary of the window, barely visible.
     commands.spawn((
         Text2d::new("I'm at [0, -180]"),
         Transform::from_translation(vec3(0.0, -180.0, 0.0)),
     ));
 }
-fn reset_resolution(mut q_window: Query<&mut Window>) {
+fn reset_window(mut q_window: Query<&mut Window>) {
     let mut bevy_window = q_window.single_mut().unwrap();
+    bevy_window.resolution.set_scale_factor(1.0);
     bevy_window.resolution.set_scale_factor_override(None);
     bevy_window.resolution.set_physical_resolution(1280, 720);
 }
-fn change_resolution(mut q_window: Query<&mut Window>) {
+fn change_base_scale(mut q_window: Query<&mut Window>) {
+    let mut bevy_window = q_window.single_mut().unwrap();
+    bevy_window.resolution.set_scale_factor(2.0);
+    bevy_window.resolution.set_physical_resolution(1280, 720);
+}
+fn change_scale_override(mut q_window: Query<&mut Window>) {
     let mut bevy_window = q_window.single_mut().unwrap();
     bevy_window.resolution.set_scale_factor_override(Some(2.0));
     bevy_window.resolution.set_physical_resolution(1280, 720);
-    // After setting the above I expect a window with HD size, but 640x360 internal resolution
 }
 /// Only for informative purposes, to display the current window state.
 fn update_resolution_text(mut q_text: Query<&mut Text>, q_window: Query<&Window>) {
