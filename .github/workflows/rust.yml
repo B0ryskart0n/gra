@@ -17,7 +17,7 @@ jobs:
     - name: Update system
       run: sudo apt update
     - name: Install dependencies
-      run: sudo apt install -y mold libasound2-dev libudev-dev
+      run: sudo apt-get install -y mold g++ pkg-config libx11-dev libasound2-dev libudev-dev libxkbcommon-x11-0
     - name: Build
       run: cargo build
     - name: Test
