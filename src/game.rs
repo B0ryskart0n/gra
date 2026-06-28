@@ -243,7 +243,7 @@ enum Item {
     Banana,
 }
 impl Item {
-    // FIXME Knowing the pixel (and meter) size should not be runtime.
+    // TODO Knowing the pixel (and meter) size should not be runtime.
     fn size(&self) -> Vec2 {
         match self {
             Self::Banana => METERS_PER_PIXEL * Vec2::new(16.0, 16.0),
