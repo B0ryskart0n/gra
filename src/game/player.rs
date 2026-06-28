@@ -7,6 +7,7 @@ use super::Player;
 use super::PlayerDamage;
 use super::PlayerDeath;
 use super::Projectile;
+use super::SPRITE_ORIENTATION;
 use super::Stats;
 use crate::Cursor;
 use crate::METERS_PER_PIXEL;
@@ -47,6 +48,7 @@ pub fn spawn(mut commands: Commands) {
     commands.spawn((
         Name::new("Player"),
         Player,
+        Looking(SPRITE_ORIENTATION),
         DashTimer::default(),
         AttackTimer::default(),
         Health(PLAYER_MAX_HEALTH),
@@ -176,15 +178,37 @@ pub fn take_damage(
 
     Ok(())
 }
+pub fn update_looking(
+    mut q_player: Query<(&Transform, &mut Looking), With<Player>>,
+    q_camera: Query<&Cursor>,
+) -> Result {
+    let (player_transform, mut player_facing) = q_player.single_mut()?;
+    let cursor = q_camera.single()?;
+
+    player_facing.0 = match cursor.0 {
+        None => player_facing.0,
+        Some(cursor_position) => (cursor_position - player_transform.translation.xy()).normalize(),
+    };
+
+    Ok(())
+}
 pub fn attack(
     time_fixed: Res<Time>,
     mut commands: Commands,
-    mut q_player: Query<(&mut AttackTimer, &GlobalTransform, &PlayerState, &Stats), With<Player>>,
-    q_cursor: Query<&Cursor>,
+    mut q_player: Query<
+        (
+            &mut AttackTimer,
+            &GlobalTransform,
+            &Looking,
+            &PlayerState,
+            &Stats,
+        ),
+        With<Player>,
+    >,
 ) -> Result {
-    let (mut attack_timer, player_transform, player_state, stats) = q_player.single_mut()?;
+    let (mut attack_timer, player_transform, player_looking, player_state, stats) =
+        q_player.single_mut()?;
     let player_position = player_transform.translation();
-    let cursor = q_cursor.single()?;
 
     attack_timer.tick(time_fixed.delta().mul_f32(stats.attack_speed));
 
@@ -196,11 +220,7 @@ pub fn attack(
             Transform::from_translation(player_position),
             RigidBody::Kinematic,
             Collider::rectangle(PROJECTILE_SIZE, PROJECTILE_SIZE),
-            // TODO When cursor is None then should fire at the direction of Player.
-            LinearVelocity(
-                PROJECTILE_SPEED
-                    * (cursor.0.unwrap_or(Vec2::ZERO) - player_position.xy()).normalize(),
-            ),
+            LinearVelocity(PROJECTILE_SPEED * player_looking.0),
             DespawnOnExit(MainState::Game),
             Lifetime::new(PROJECTILE_LIFETIME),
             CollisionLayers::new(
@@ -241,3 +261,6 @@ impl PlayerState {
         discriminant(self) == discriminant(&PlayerState::Dashing(Vec2::ZERO))
     }
 }
+/// Normalized vector of direction the entity is looking.
+#[derive(Component)]
+pub struct Looking(Vec2);

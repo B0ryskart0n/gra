@@ -60,9 +60,10 @@ pub fn game_plugin(app: &mut App) {
         .add_systems(
             FixedUpdate,
             (
-                // TODO Consider running collision effects run after the physics
+                // TODO Consider the order of these systems, having also in mind when Avian physics runs.
                 player::hit,
                 player::take_damage,
+                player::update_looking,
                 player::attack,
                 player::handle_input,
                 enemy::hit,
