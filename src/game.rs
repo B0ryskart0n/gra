@@ -6,6 +6,7 @@ mod player;
 mod stages;
 
 use crate::Cursor;
+use crate::ImageCamera;
 use crate::METERS_PER_PIXEL;
 use crate::MainState;
 use crate::PIXELS_PER_METER;
@@ -107,15 +108,18 @@ fn update_run(time: Res<Time>, mut q_run: Query<&mut Run>) -> Result {
 fn exit_game(mut next_state: ResMut<NextState<MainState>>) {
     next_state.set(MainState::Menu);
 }
-fn reset_camera(mut q_camera: Query<&mut Transform, With<Camera>>) -> Result {
+fn reset_camera(mut q_camera: Query<&mut Transform, With<ImageCamera>>) -> Result {
     q_camera.single_mut()?.translation = Vec3::ZERO;
     Ok(())
 }
 fn update_camera_and_cursor(
     time: Res<Time>,
-    mut q_camera: Query<(&Camera, &mut Transform, &GlobalTransform, &mut Cursor)>,
+    mut q_camera: Query<
+        (&Camera, &mut Transform, &GlobalTransform, &mut Cursor),
+        With<ImageCamera>,
+    >,
     // the Without<Camera> is required because both query Transform
-    q_player: Query<&Transform, (With<Player>, Without<Camera>)>,
+    q_player: Query<&Transform, (With<Player>, Without<ImageCamera>)>,
     q_window: Query<&Window>,
 ) -> Result {
     let (camera, mut camera_transform, camera_global_transform, mut cursor) =

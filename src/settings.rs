@@ -13,10 +13,10 @@ const QHD_WIDTH: u32 = 2560;
 const QHD_HEIGHT: u32 = 1440;
 
 pub fn plugin(app: &mut App) {
-    app.init_resource::<UserSettings>()
-        .add_systems(PostStartup, apply_initial_settings);
+    app.init_resource::<UserSettings>();
+    //.add_systems(PostStartup, apply_initial_settings);
 }
-fn apply_initial_settings(user_settings: Res<UserSettings>, q_window: Query<&mut Window>) {
+fn _apply_initial_settings(user_settings: Res<UserSettings>, q_window: Query<&mut Window>) {
     user_settings.apply_settings(q_window);
 }
 
